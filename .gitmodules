@@ -1,9 +1,16 @@
 [submodule "Plugins/CommonLibraryPlugin"]
 	path = Plugins/CommonLibraryPlugin
 	url = https://github.com/jjw1270/CommonLibraryPlugin.git
+	branch = master
 [submodule "Plugins/CustomUIPlugin"]
 	path = Plugins/CustomUIPlugin
 	url = https://github.com/jjw1270/CustomUIPlugin.git
+	branch = master
 [submodule "Plugins/SaveGamePlugin"]
 	path = Plugins/SaveGamePlugin
 	url = https://github.com/jjw1270/SaveGamePlugin.git
+	branch = master
+[submodule "Plugins/ItemCorePlugin"]
+	path = Plugins/ItemCorePlugin
+	url = https://github.com/jjw1270/ItemCorePlugin.git
+	branch = master
