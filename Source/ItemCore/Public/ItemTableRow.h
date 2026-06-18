@@ -1,0 +1,91 @@
+// Copyright (c) 2026 장윤제. All rights reserved.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Engine/DataTable.h"
+#include "ItemID.h"
+#include "ItemTableRow.generated.h"
+
+UENUM(BlueprintType)
+enum class EItemDevelopmentState : uint8
+{
+	NotUsed				UMETA(Tooltip = "사용하지 않음, 샘플 등"),
+
+	Developing			UMETA(Tooltip = "개발 중"),
+	Ready					UMETA(Tooltip = "출시 가능"),
+	Shipping				UMETA(Tooltip = "Shipping"),
+};
+
+USTRUCT(BlueprintType)
+struct ITEMCORE_API FItemTableRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FItemID ItemID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FText DisplayName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EItemDevelopmentState DevState = EItemDevelopmentState::NotUsed;
+
+public:
+	FItemTableRow()
+		: FItemTableRow(EItemType::NA)
+	{
+	}
+
+	FItemTableRow(EItemType _type)
+	{
+		if (FItemID::IsUsableItemType(_type) == false)
+			return;
+
+		if(ItemID == FItemID::Zero)
+		{
+			ItemID.SetType(_type);
+		}
+
+#if WITH_EDITOR
+		TableItemType = _type;
+#endif
+	}
+
+public:
+	bool IsUsableItem() const;
+
+	FText GetDisplayName() const;
+
+#if !UE_BUILD_SHIPPING
+private:
+	static bool DEBUG_ShowItemIDOnDisplayName;
+
+public:
+	static void ToggleShowItemIDOnDisplayName()
+	{
+		DEBUG_ShowItemIDOnDisplayName = !DEBUG_ShowItemIDOnDisplayName;
+	}
+#endif
+
+#if WITH_EDITORONLY_DATA
+private:
+	EItemType TableItemType = EItemType::NA;
+
+	TOptional<FItemID> CachedItemID;
+
+	static const FName ItemTableLog;
+#endif
+
+public:
+#if WITH_EDITOR
+	virtual void OnDataTableChanged(const UDataTable* _in_data_table, const FName _in_row_name) override;
+	virtual void OnPostDataImport(const UDataTable* _in_data_table, const FName _in_row_name, TArray<FString>& _out_collected_import_problems) override;
+	
+	virtual EDataValidationResult IsDataValid(FDataValidationContext& _context) const override;
+
+protected:
+	void HandleItemIDChanged(const UDataTable* _in_data_table);
+#endif
+};
