@@ -123,7 +123,7 @@ REM 종료 처리
 REM ===============================
 
 :SUCCESS_EXIT
-timeout /t 2 /nobreak >nul
+ping -n 3 127.0.0.1 >nul
 endlocal
 exit /b 0
 
