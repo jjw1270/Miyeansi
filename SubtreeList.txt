@@ -3,3 +3,5 @@
 # Active subtree entries use this format:
 # prefix repo branch
 Plugins/ItemCorePlugin https://github.com/jjw1270/ItemCorePlugin.git master
+Plugins/StroyFlowPlugin https://github.com/jjw1270/StoryFlowPlugin.git master
+Plugins/InteractionPlugin https://github.com/jjw1270/InteractionPlugin.git master
