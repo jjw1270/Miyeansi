@@ -2,7 +2,4 @@
 #
 # Active subtree entries use this format:
 # prefix repo branch
-#
-# This project currently tracks plugin repositories as Git submodules in .gitmodules,
-# so there are no active subtree entries. Keep this file comment-only unless a
-# dependency is intentionally vendored with `git subtree add` first.
+Plugins/ItemCorePlugin https://github.com/jjw1270/ItemCorePlugin.git master
