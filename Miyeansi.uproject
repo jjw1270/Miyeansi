@@ -25,6 +25,14 @@
 		{
 			"Name": "ModuleGeneration",
 			"Enabled": true
+		},
+		{
+			"Name": "StoryFlow",
+			"Enabled": true
+		},
+		{
+			"Name": "InteractionSystem",
+			"Enabled": true
 		}
 	]
 }
