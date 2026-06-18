@@ -10,3 +10,11 @@
 	path = Plugins/SaveGamePlugin
 	url = https://github.com/jjw1270/SaveGamePlugin.git
 	branch = master
+[submodule "Plugins/StoryFlowPlugin"]
+	path = Plugins/StoryFlowPlugin
+	url = https://github.com/jjw1270/StoryFlowPlugin.git
+	branch = master
+[submodule "Plugins/InteractionPlugin"]
+	path = Plugins/InteractionPlugin
+	url = https://github.com/jjw1270/InteractionPlugin.git
+	branch = master
