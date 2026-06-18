@@ -29,6 +29,10 @@
 		{
 			"Name": "InteractionSystem",
 			"Enabled": true
+		},
+		{
+			"Name": "VibeUE",
+			"Enabled": true
 		}
 	]
 }
