@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import html
 import json
@@ -349,12 +349,44 @@ def build_html(docs: list[dict]) -> str:
       border:1px solid var(--line);
       border-radius:26px;
       box-shadow:var(--shadow);
+    }
+    .dashboard {
       overflow:hidden;
     }
+    .doc-view { overflow:visible; }
     .dashboard-head, .doc-head { padding:34px 38px; border-bottom:1px solid var(--line); background:linear-gradient(135deg,#ffffff 0,#f6f8ff 100%); }
     .dashboard h2, .doc-head h2 { margin:8px 0 0; font-size:clamp(30px,4vw,50px); line-height:1.13; letter-spacing:-.06em; }
     .dashboard-head p, .doc-head p { max-width:760px; color:#475467; margin:14px 0 0; font-size:16px; }
     .dashboard-body, .doc-body { padding:32px 40px; }
+    .doc-reading {
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 260px;
+      align-items:start;
+    }
+    .doc-side-toc {
+      position:sticky;
+      top:86px;
+      max-height:calc(100vh - 108px);
+      overflow:auto;
+      border-left:1px solid var(--line);
+      background:linear-gradient(180deg,#fbfdff 0,#ffffff 100%);
+      padding:26px 18px;
+    }
+    .doc-side-toc strong { display:block; margin-bottom:10px; font-size:14px; letter-spacing:-.035em; }
+    .doc-side-toc nav { display:grid; gap:3px; }
+    .doc-side-toc a {
+      display:block;
+      color:#475467;
+      font-size:13px;
+      line-height:1.35;
+      border-radius:9px;
+      padding:6px 7px;
+      word-break:keep-all;
+    }
+    .doc-side-toc a:hover { background:var(--accent-soft); color:var(--accent); text-decoration:none; }
+    .doc-side-toc .lv2 { font-weight:800; color:#27364f; }
+    .doc-side-toc .lv3 { padding-left:16px; }
+    .doc-side-toc .lv4, .doc-side-toc .lv5, .doc-side-toc .lv6 { padding-left:26px; color:var(--muted); }
     .grid { display:grid; gap:14px; }
     .grid.cards { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
     .stat, .quick-card {
@@ -383,6 +415,15 @@ def build_html(docs: list[dict]) -> str:
     .inline-toc a:hover { background:var(--accent-soft); color:var(--accent); text-decoration:none; }
     .inline-toc .lv3 { padding-left:16px; color:#4b5563; }
     .inline-toc .lv4, .inline-toc .lv5, .inline-toc .lv6 { padding-left:26px; color:var(--muted); }
+    .reading-hint {
+      margin:0 0 18px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:#f8fbff;
+      color:#475467;
+      padding:12px 14px;
+      font-size:14px;
+    }
     .doc-body { font-size:16px; }
     .doc-body h2, .doc-body h3, .doc-body h4, .doc-body h5, .doc-body h6 { line-height:1.28; letter-spacing:-.04em; scroll-margin-top:92px; color:#111827; }
     .doc-body h2 { font-size:34px; border-bottom:2px solid var(--line); padding-bottom:12px; margin:0 0 18px; }
@@ -400,6 +441,62 @@ def build_html(docs: list[dict]) -> str:
     .doc-body th, .doc-body td { border:1px solid var(--line); padding:10px 11px; vertical-align:top; }
     .doc-body th { background:#f1f5f9; text-align:left; color:#344054; }
     .doc-body tr:nth-child(even) td { background:#fbfdff; }
+    .doc-body.sectioned > h2:first-child { margin-bottom:24px; }
+    .planning-section {
+      margin:18px 0;
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:var(--panel);
+      box-shadow:var(--shadow-soft);
+      overflow:hidden;
+    }
+    .planning-section[open] { border-color:#c7d2fe; }
+    .planning-section summary {
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:10px 14px;
+      align-items:center;
+      cursor:pointer;
+      list-style:none;
+      padding:16px 18px;
+      background:linear-gradient(135deg,#ffffff 0,#f8faff 100%);
+    }
+    .planning-section summary::-webkit-details-marker { display:none; }
+    .planning-section summary::after {
+      content:'펼치기';
+      grid-column:2;
+      grid-row:1;
+      align-self:start;
+      color:var(--accent);
+      background:var(--accent-soft);
+      border-radius:999px;
+      padding:4px 9px;
+      font-size:12px;
+      font-weight:800;
+      white-space:nowrap;
+    }
+    .planning-section[open] summary::after { content:'접기'; }
+    .planning-section h3 {
+      grid-column:1;
+      margin:0;
+      border:0;
+      padding:0;
+      font-size:23px;
+      line-height:1.28;
+    }
+    .planning-section h3.compact-date-title { font-size:28px; letter-spacing:-.03em; }
+    .section-preview {
+      grid-column:1 / -1;
+      margin:0;
+      color:#667085;
+      font-size:14px;
+      line-height:1.55;
+    }
+    .section-content {
+      padding:4px 20px 20px;
+      border-top:1px solid var(--line);
+    }
+    .section-content > :first-child { margin-top:14px; }
     .mobile-library-toggle { display:none; }
     .hidden { display:none!important; }
     @media (max-width:1120px) {
@@ -407,6 +504,16 @@ def build_html(docs: list[dict]) -> str:
       .library { top:76px; height:calc(100vh - 92px); }
       .dashboard-head, .doc-head { padding:28px; }
       .dashboard-body, .doc-body { padding:28px; }
+      .doc-reading { grid-template-columns:1fr; }
+      .doc-side-toc {
+        position:relative;
+        top:auto;
+        max-height:none;
+        border-left:0;
+        border-bottom:1px solid var(--line);
+        padding:20px 28px;
+      }
+      .doc-side-toc nav { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
     }
     @media (max-width:820px) {
       .topbar { align-items:flex-start; flex-direction:column; }
@@ -417,6 +524,9 @@ def build_html(docs: list[dict]) -> str:
       .reader { max-width:none; }
       .dashboard-head, .doc-head, .dashboard-body, .doc-body { padding:20px; }
       .doc-body { font-size:15px; }
+      .doc-side-toc { padding:18px 20px; }
+      .planning-section summary { grid-template-columns:1fr; }
+      .planning-section summary::after { grid-column:1; grid-row:auto; width:max-content; }
     }
   </style>
 </head>
@@ -498,15 +608,124 @@ def build_html(docs: list[dict]) -> str:
         btn.addEventListener('click', () => openDoc(btn.dataset.doc));
       });
     }
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[ch]));
+    }
     function tocHtml(doc) {
       const headings = (doc.headings || []).filter(h => h.level > 1).slice(0, 120);
       if (!headings.length) return '';
       return `
-        <details class="inline-toc">
+        <details class="inline-toc" open>
           <summary>이 문서 목차</summary>
-          <nav>${headings.map(h => `<a class="lv${h.level}" href="#${h.id}">${h.text}</a>`).join('')}</nav>
+          <nav>${headings.map(h => `<a class="lv${h.level}" href="#${h.id}" title="${escapeHtml(h.text)}">${escapeHtml(headingLabel(doc, h.text))}</a>`).join('')}</nav>
         </details>
       `;
+    }
+    function sideTocHtml(doc) {
+      const headings = (doc.headings || []).filter(h => h.level > 1).slice(0, 160);
+      if (!headings.length) return '';
+      return `
+        <aside class="doc-side-toc" aria-label="현재 문서 목차">
+          <strong>현재 문서 목차</strong>
+          <nav>${headings.map(h => `<a class="lv${h.level}" href="#${h.id}" title="${escapeHtml(h.text)}">${escapeHtml(headingLabel(doc, h.text))}</a>`).join('')}</nav>
+        </aside>
+      `;
+    }
+    function isCalendarDoc(doc) {
+      return doc?.path === '스토리/06_날짜별_진행_달력.md' || doc?.title === '날짜별 진행 달력';
+    }
+    function isContinuousReadingDoc(doc) {
+      return doc?.path === '스토리/00_전체_스토리.md'
+        || doc?.path === '스토리/07_전체_스토리_외전_실패루프.md'
+        || doc?.title === '전체 스토리'
+        || doc?.title === '전체 스토리 외전: 실패 루프와 새드엔딩';
+    }
+    function dateHeadingLabel(text) {
+      const match = (text || '').match(/^(D(?:-\d+|\+\d+|-Day))\b/);
+      return match ? match[1] : '';
+    }
+    function headingLabel(doc, text) {
+      return isCalendarDoc(doc) ? (dateHeadingLabel(text) || text) : text;
+    }
+    function previewText(node) {
+      const text = (node?.textContent || '').replace(/\s+/g, ' ').trim();
+      if (!text) return '';
+      return text.length > 140 ? text.slice(0, 140) + '…' : text;
+    }
+    function enhanceDocBody(doc) {
+      const body = content.querySelector('.doc-body');
+      if (!body) return false;
+      if (isContinuousReadingDoc(doc)) return false;
+      const headings = [...body.querySelectorAll('h3')];
+      if (!headings.length) return false;
+      const autoCollapse = headings.length > 6 || (doc.plain || '').length > 12000;
+      headings.forEach((heading, index) => {
+        const originalHeadingText = heading.textContent.trim();
+        const compactHeadingText = headingLabel(doc, originalHeadingText);
+        if (compactHeadingText !== originalHeadingText) {
+          heading.dataset.fullTitle = originalHeadingText;
+          heading.title = originalHeadingText;
+          heading.textContent = compactHeadingText;
+          heading.classList.add('compact-date-title');
+        }
+
+        const section = document.createElement('details');
+        section.className = 'planning-section';
+        section.open = !autoCollapse || index < 2;
+
+        const summary = document.createElement('summary');
+        const sectionContent = document.createElement('div');
+        sectionContent.className = 'section-content';
+
+        heading.parentNode.insertBefore(section, heading);
+        section.appendChild(summary);
+        section.appendChild(sectionContent);
+        summary.appendChild(heading);
+
+        while (section.nextSibling) {
+          const node = section.nextSibling;
+          if (node.nodeType === Node.ELEMENT_NODE && ['H2', 'H3'].includes(node.tagName)) break;
+          sectionContent.appendChild(node);
+        }
+
+        const source = sectionContent.querySelector('p, li, blockquote');
+        const preview = previewText(source);
+        if (preview) {
+          const previewEl = document.createElement('p');
+          previewEl.className = 'section-preview';
+          previewEl.textContent = preview;
+          summary.appendChild(previewEl);
+        }
+      });
+      body.classList.add('sectioned');
+      if (autoCollapse) {
+        const hint = document.createElement('p');
+        hint.className = 'reading-hint';
+        hint.textContent = '긴 문서는 처음 두 섹션만 펼쳐 둡니다. 상단 버튼으로 전체를 펼치거나, 목차에서 필요한 섹션으로 바로 이동하세요.';
+        body.insertBefore(hint, body.firstChild);
+      }
+      return true;
+    }
+    function setAllSections(open) {
+      content.querySelectorAll('.planning-section').forEach(section => {
+        section.open = open;
+      });
+    }
+    function revealHeading(hash) {
+      const id = decodeURIComponent((hash || '').replace(/^#/, ''));
+      if (!id) return false;
+      const target = document.getElementById(id);
+      if (!target) return false;
+      const section = target.closest('details.planning-section');
+      if (section) section.open = true;
+      setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+      return true;
     }
     function openDoc(id) {
       const doc = docs.find(d => d.id === id) || docs[0];
@@ -519,16 +738,31 @@ def build_html(docs: list[dict]) -> str:
             <p class="path">${doc.path}</p>
             <div class="doc-tools">
               <button id="copyPath">경로 복사</button>
+              <button id="expandSections">모두 펼치기</button>
+              <button id="collapseSections">모두 접기</button>
               <button id="backHome">홈으로</button>
             </div>
             ${tocHtml(doc)}
           </header>
-          <div class="doc-body">${doc.html}</div>
+          <div class="doc-reading">
+            <div class="doc-body">${doc.html}</div>
+            ${sideTocHtml(doc)}
+          </div>
         </article>
       `;
+      const hasSections = enhanceDocBody(doc);
       document.getElementById('copyPath').addEventListener('click', async () => {
         try { await navigator.clipboard.writeText(doc.path); } catch (_) {}
       });
+      const expandSections = document.getElementById('expandSections');
+      const collapseSections = document.getElementById('collapseSections');
+      if (hasSections) {
+        expandSections.addEventListener('click', () => setAllSections(true));
+        collapseSections.addEventListener('click', () => setAllSections(false));
+      } else {
+        expandSections.classList.add('hidden');
+        collapseSections.classList.add('hidden');
+      }
       document.getElementById('backHome').addEventListener('click', renderHome);
       renderList();
       location.hash = doc.id;
@@ -558,6 +792,8 @@ def build_html(docs: list[dict]) -> str:
             </div>
             <h3>빠른 시작</h3>
             <div class="grid cards">
+              ${quickCard('전체 스토리 보기', '전체 스토리', 'D-32부터 진엔딩 후 D+3까지 확정된 본편 흐름을 소설형으로 읽습니다.')}
+              ${quickCard('실패 외전 보기', '전체 스토리 외전: 실패 루프와 새드엔딩', '하연 실패 루프와 새드엔딩을 짧고 선명한 외전 장면으로 확인합니다.')}
               ${quickCard('날짜 흐름 보기', '날짜별 진행 달력', 'D-32부터 축제 마지막 날, D+3 방학식까지의 전체 진행을 확인합니다.')}
               ${quickCard('핵심 시스템 보기', '미연시 코어 시스템 요구사항', '날짜, 회차, 플래그, 조건, 엔딩 기록 같은 런타임 상태를 확인합니다.')}
               ${quickCard('하루 행동 보기', '하루 행동 시스템 기획', '평일/주말 슬롯과 선택 행동 구조를 확인합니다.')}
@@ -573,6 +809,12 @@ def build_html(docs: list[dict]) -> str:
     content.addEventListener('click', event => {
       const quick = event.target.closest('[data-quick]');
       if (quick) openDoc(quick.dataset.quick);
+      const tocLink = event.target.closest('.inline-toc a, .doc-side-toc a');
+      if (tocLink && tocLink.hash) {
+        event.preventDefault();
+        revealHeading(tocLink.hash);
+        history.replaceState(null, '', tocLink.hash);
+      }
     });
     search.addEventListener('input', renderList);
     buttons.forEach(btn => btn.addEventListener('click', () => {
@@ -585,8 +827,17 @@ def build_html(docs: list[dict]) -> str:
     document.getElementById('mobileLibraryToggle').addEventListener('click', () => library.classList.toggle('open'));
 
     const initial = decodeURIComponent(location.hash.replace(/^#/, ''));
-    if (initial && initial !== 'home' && docs.some(d => d.id === initial)) openDoc(initial);
-    else renderHome();
+    const initialDoc = docs.find(d => d.id === initial);
+    const initialHeadingDoc = docs.find(d => (d.headings || []).some(h => h.id === initial));
+    if (initial && initial !== 'home' && initialDoc) {
+      openDoc(initialDoc.id);
+    } else if (initial && initialHeadingDoc) {
+      openDoc(initialHeadingDoc.id);
+      revealHeading('#' + initial);
+      history.replaceState(null, '', '#' + initial);
+    } else {
+      renderHome();
+    }
   </script>
 </body>
 </html>
@@ -601,3 +852,4 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
+
