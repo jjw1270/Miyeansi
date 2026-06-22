@@ -6,7 +6,8 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-OUTPUT = ROOT / '통합_기획서.html'
+PROJECT_ROOT = ROOT.parent
+OUTPUT = PROJECT_ROOT / '통합_기획서.html'
 
 EXCLUDE_NAMES = {
     '통합_기획서.html',
@@ -533,7 +534,7 @@ def build_html(docs: list[dict]) -> str:
     <div class="top-actions">
       <button id="mobileLibraryToggle" class="mobile-library-toggle">문서 목록</button>
       <button id="homeBtn">홈</button>
-      <a class="button" href="README.md">원본 안내</a>
+      <a class="button" href="기획/README.md">원본 안내</a>
     </div>
   </header>
 
@@ -811,7 +812,7 @@ def build_html(docs: list[dict]) -> str:
             </div>
             <h3>빠른 시작</h3>
             <div class="grid cards">
-              ${quickCard('전체 스토리 보기', '전체 스토리', 'D-32부터 진엔딩 후 D+3까지 확정된 본편 흐름을 소설형으로 읽습니다.')}
+              ${quickCard('전체 스토리 보기', '전체 스토리', '첫 월요일부터 진엔딩 후 방학식까지 확정된 본편 흐름을 소설형으로 읽습니다.')}
               ${quickCard('실패 외전 보기', '전체 스토리 외전: 실패 루프와 새드엔딩', '하연 실패 루프와 새드엔딩을 짧고 선명한 외전 장면으로 확인합니다.')}
               ${quickCard('날짜 흐름 보기', '날짜별 진행 달력', 'D-32부터 축제 마지막 날, D+3 방학식까지의 전체 진행을 확인합니다.')}
               ${quickCard('핵심 시스템 보기', '미연시 코어 시스템 요구사항', '날짜, 회차, 플래그, 조건, 엔딩 기록 같은 런타임 상태를 확인합니다.')}
@@ -880,7 +881,7 @@ def build_html(docs: list[dict]) -> str:
 def main() -> None:
     docs = collect_docs()
     OUTPUT.write_text(build_html(docs), encoding='utf-8')
-    print(f'generated {OUTPUT.relative_to(ROOT)} from {len(docs)} markdown files')
+    print(f'generated {OUTPUT.relative_to(PROJECT_ROOT)} from {len(docs)} markdown files')
 
 
 if __name__ == '__main__':
