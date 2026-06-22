@@ -44,34 +44,34 @@
 ## 3. 전체 Scene 흐름
 
 ```text
-DDAY_00_ENTRY_CAFE
+DDay_00Entry
         ↓
-DDAY_01_DAY_CHOICE_HUB
+DDay_01Choice
         ↓
-DDAY_02A_HAYEON_DAY
-DDAY_02B_SOHA_DAY
-DDAY_02C_SEORIN_DAY
-DDAY_02D_MIRU_DAY
-DDAY_02E_ALONE_STAGE_CHECK
+DDay_02Hayeon
+DDay_02Soha
+DDay_02Seorin
+DDay_02Miru
+DDay_02Alone
         ↓
-DDAY_03_PRE_CLOSE_ASSESS
+DDay_03Assess
         ↓
-DDAY_04_ROUTE_GATE
-        ├─ DDAY_05_TRUE_APPROACH
-        ├─ DDAY_06_FAIL_HAYEON_MISSING
-        ├─ DDAY_07_SAD_SOHA_ENTRY
-        ├─ DDAY_08_SAD_SEORIN_ENTRY
-        ├─ DDAY_09_SAD_MIRU_ENTRY
-        ├─ DDAY_10_FAIL_ACCIDENT_UNLINKED
-        └─ DDAY_11_FAIL_AVOIDANCE_LOOP
+DDay_04Gate
+        ├─ DDay_05True
+        ├─ DDay_06HayeonMiss
+        ├─ DDay_07SohaSad
+        ├─ DDay_08SeorinSad
+        ├─ DDay_09MiruSad
+        ├─ DDay_10AccFail
+        └─ DDay_11Avoid
 ```
 
 ## 4. 공통 진입
 
-### DDAY_00_ENTRY_CAFE
+### DDay_00Entry
 
 ```text
-# DDAY_00_ENTRY_CAFE
+# DDay_00Entry
 @enter Date == DDay
 @enter D1CafeOperated == true
 @enter D2PremonitionSeen == true
@@ -123,15 +123,15 @@ DDAY_04_ROUTE_GATE
 
 ```text
 @flag DDayCafeClosed = true
-@goto DDAY_01_DAY_CHOICE_HUB
+@goto DDay_01Choice
 ```
 
 ## 5. 낮 선택 허브
 
-### DDAY_01_DAY_CHOICE_HUB
+### DDay_01Choice
 
 ```text
-# DDAY_01_DAY_CHOICE_HUB
+# DDay_01Choice
 @enter DDayCafeClosed == true
 @bg 학교 축제 운동장 / 낮
 @music festival_day_choice
@@ -146,26 +146,26 @@ DDAY_04_ROUTE_GATE
 선택지:
 
 ```text
-@choice [하연과 축제를 둘러본다] -> DDAY_02A_HAYEON_DAY
-@choice [소하와 마지막으로 오래된 길을 걷는다] -> DDAY_02B_SOHA_DAY
-@choice [서린의 방송 마무리를 돕는다] -> DDAY_02C_SEORIN_DAY
-@choice [미루의 도움 인원 마무리를 확인한다] -> DDAY_02D_MIRU_DAY
-@choice [혼자 야외 소무대 쪽을 본다] -> DDAY_02E_ALONE_STAGE_CHECK
+@choice [하연과 축제를 둘러본다] -> DDay_02Hayeon
+@choice [소하와 마지막으로 오래된 길을 걷는다] -> DDay_02Soha
+@choice [서린의 방송 마무리를 돕는다] -> DDay_02Seorin
+@choice [미루의 도움 인원 마무리를 확인한다] -> DDay_02Miru
+@choice [혼자 야외 소무대 쪽을 본다] -> DDay_02Alone
 ```
 
 주의:
 
 - 낮 선택은 한 번만 가능하다.
 - 선택한 축만 보정한다.
-- `DDayDayChoiceUsed = true`를 공통으로 설정한다.
+- `DDayChoiceUsed = true`를 공통으로 설정한다.
 
 ## 6. 낮 선택 A: 하연
 
-### DDAY_02A_HAYEON_DAY
+### DDay_02Hayeon
 
 ```text
-# DDAY_02A_HAYEON_DAY
-@enter DDayDayChoiceUsed != true
+# DDay_02Hayeon
+@enter DDayChoiceUsed != true
 @bg 축제 운동장 가장자리 / 낮
 @music hayeon_day_soft
 ```
@@ -211,36 +211,36 @@ D-2 성공 시 추가:
 상태 처리:
 
 ```text
-@if HaYeonTrust >= 5 || HaYeonPaceRead >= 2
-  @flag HaYeonTrust += 1
-  @flag HaYeonPaceRead += 1
+@if HayeonTrust >= 5 || HayeonPace >= 2
+  @flag HayeonTrust += 1
+  @flag HayeonPace += 1
   @flag DDayHayeonDaySuccess = true
 @endif
 
-@if D2PremonitionPassed == true && DDayHayeonDaySuccess == true
-  @flag AccidentClueHaYeon = true
+@if D2Passed == true && DDayHayeonDaySuccess == true
+  @flag ClueHayeon = true
 @endif
 
-@flag DDayDayChoiceUsed = true
-@flag DDayDayChoice = Hayeon
-@goto DDAY_03_PRE_CLOSE_ASSESS
+@flag DDayChoiceUsed = true
+@flag DDayChoice = Hayeon
+@goto DDay_03Assess
 ```
 
 실패/약한 진행:
 
 ```text
-@if HaYeonTrust <= 4 && HaYeonPaceRead <= 1
+@if HayeonTrust <= 4 && HayeonPace <= 1
   @flag DDayHayeonDaySuccess = false
 @endif
 ```
 
 ## 7. 낮 선택 B: 소하
 
-### DDAY_02B_SOHA_DAY
+### DDay_02Soha
 
 ```text
-# DDAY_02B_SOHA_DAY
-@enter DDayDayChoiceUsed != true
+# DDay_02Soha
+@enter DDayChoiceUsed != true
 @bg 운동장 옆 오래된 길 / 낮
 @music soha_memory_warm
 ```
@@ -272,11 +272,11 @@ D-3 정리 성공 시:
 D-3 미정리 보정 선택:
 
 ```text
-@choice [예전처럼 편한 쪽으로 돌아간다] -> DDAY_07_SAD_SOHA_ENTRY
-@choice [지금 가야 할 사람을 말한다] -> DDAY_02B_SOHA_RESOLVE
+@choice [예전처럼 편한 쪽으로 돌아간다] -> DDay_07SohaSad
+@choice [지금 가야 할 사람을 말한다] -> DDay_02SohaDone
 ```
 
-#### DDAY_02B_SOHA_RESOLVE
+#### DDay_02SohaDone
 
 ```text
 재윤: 편해서 돌아가는 거랑, 좋아해서 가는 건 다르잖아.
@@ -288,28 +288,28 @@ D-3 미정리 보정 선택:
 상태 처리:
 
 ```text
-@if SoHaResolved == true
-  @flag DDaySoHaConfirmed = true
-@elseif SoHaPressure <= 2
-  @flag SoHaResolved = true
-  @flag AccidentClueSoHa = true
-  @flag DDaySoHaConfirmed = true
+@if SohaDone == true
+  @flag DDaySoha = true
+@elseif SohaPressure <= 2
+  @flag SohaDone = true
+  @flag ClueSoha = true
+  @flag DDaySoha = true
 @else
-  @flag SoHaPressure = 3
+  @flag SohaPressure = 3
 @endif
 
-@flag DDayDayChoiceUsed = true
-@flag DDayDayChoice = SoHa
-@goto DDAY_03_PRE_CLOSE_ASSESS
+@flag DDayChoiceUsed = true
+@flag DDayChoice = Soha
+@goto DDay_03Assess
 ```
 
 ## 8. 낮 선택 C: 서린
 
-### DDAY_02C_SEORIN_DAY
+### DDay_02Seorin
 
 ```text
-# DDAY_02C_SEORIN_DAY
-@enter DDayDayChoiceUsed != true
+# DDay_02Seorin
+@enter DDayChoiceUsed != true
 @bg 방송실 / 낮
 @music seorin_order_cold
 ```
@@ -339,11 +339,11 @@ D-3 정리 성공 시:
 D-3 미정리 보정 선택:
 
 ```text
-@choice [서린이 정한 순서를 따른다] -> DDAY_08_SAD_SEORIN_ENTRY
-@choice [내가 확인해야 할 것을 고른다] -> DDAY_02C_SEORIN_RESOLVE
+@choice [서린이 정한 순서를 따른다] -> DDay_08SeorinSad
+@choice [내가 확인해야 할 것을 고른다] -> DDay_02SeorinDone
 ```
 
-#### DDAY_02C_SEORIN_RESOLVE
+#### DDay_02SeorinDone
 
 ```text
 재윤: 틀리지 않는 쪽만 고르면, 제가 고른 게 아니잖아요.
@@ -357,29 +357,29 @@ D-3 미정리 보정 선택:
 상태 처리:
 
 ```text
-@if SeoRinResolved == true
-  @flag DDaySeoRinConfirmed = true
-  @flag AccidentClueSeoRin = true
-@elseif SeoRinControl <= 2
-  @flag SeoRinResolved = true
-  @flag AccidentClueSeoRin = true
-  @flag DDaySeoRinConfirmed = true
+@if SeorinDone == true
+  @flag DDaySeorin = true
+  @flag ClueSeorin = true
+@elseif SeorinControl <= 2
+  @flag SeorinDone = true
+  @flag ClueSeorin = true
+  @flag DDaySeorin = true
 @else
-  @flag SeoRinControl = 3
+  @flag SeorinControl = 3
 @endif
 
-@flag DDayDayChoiceUsed = true
-@flag DDayDayChoice = SeoRin
-@goto DDAY_03_PRE_CLOSE_ASSESS
+@flag DDayChoiceUsed = true
+@flag DDayChoice = Seorin
+@goto DDay_03Assess
 ```
 
 ## 9. 낮 선택 D: 미루
 
-### DDAY_02D_MIRU_DAY
+### DDay_02Miru
 
 ```text
-# DDAY_02D_MIRU_DAY
-@enter DDayDayChoiceUsed != true
+# DDay_02Miru
+@enter DDayChoiceUsed != true
 @bg 축제 도움 인원 대기 장소 / 낮
 @music miru_soft_anxious
 ```
@@ -410,11 +410,11 @@ D-3 정리 성공 시:
 D-3 미정리 보정 선택:
 
 ```text
-@choice [마지막까지 대신 봐준다] -> DDAY_09_SAD_MIRU_ENTRY
-@choice [먼저 끝낸 일을 인정한다] -> DDAY_02D_MIRU_RESOLVE
+@choice [마지막까지 대신 봐준다] -> DDay_09MiruSad
+@choice [먼저 끝낸 일을 인정한다] -> DDay_02MiruDone
 ```
 
-#### DDAY_02D_MIRU_RESOLVE
+#### DDay_02MiruDone
 
 ```text
 재윤: 내가 확인해줘서 맞는 게 아니야.
@@ -428,29 +428,29 @@ D-3 미정리 보정 선택:
 상태 처리:
 
 ```text
-@if MiRuResolved == true
-  @flag DDayMiRuConfirmed = true
-  @flag AccidentClueMiRu = true
-@elseif MiRuDependence <= 2
-  @flag MiRuResolved = true
-  @flag AccidentClueMiRu = true
-  @flag DDayMiRuConfirmed = true
+@if MiruDone == true
+  @flag DDayMiru = true
+  @flag ClueMiru = true
+@elseif MiruDepend <= 2
+  @flag MiruDone = true
+  @flag ClueMiru = true
+  @flag DDayMiru = true
 @else
-  @flag MiRuDependence = 3
+  @flag MiruDepend = 3
 @endif
 
-@flag DDayDayChoiceUsed = true
-@flag DDayDayChoice = MiRu
-@goto DDAY_03_PRE_CLOSE_ASSESS
+@flag DDayChoiceUsed = true
+@flag DDayChoice = Miru
+@goto DDay_03Assess
 ```
 
 ## 10. 낮 선택 E: 혼자 소무대 확인
 
-### DDAY_02E_ALONE_STAGE_CHECK
+### DDay_02Alone
 
 ```text
-# DDAY_02E_ALONE_STAGE_CHECK
-@enter DDayDayChoiceUsed != true
+# DDay_02Alone
+@enter DDayChoiceUsed != true
 @bg 학교 뒤편 야외 소무대 / 낮
 @music stage_empty_day
 ```
@@ -483,41 +483,41 @@ D-3 미정리 보정 선택:
 상태 처리:
 
 ```text
-@if AccidentClueScore >= 2
-  @flag MissingPhysicalAccidentClueOne = true
+@if ClueScore >= 2
+  @flag MissPhysClue = true
 @endif
 
-@if AccidentClueSeoRin == false
-  @flag AccidentClueSeoRin = true
-@elseif AccidentClueMiRu == false
-  @flag AccidentClueMiRu = true
+@if ClueSeorin == false
+  @flag ClueSeorin = true
+@elseif ClueMiru == false
+  @flag ClueMiru = true
 @endif
 
-@if AccidentClueHaYeon == false
-  @flag DDayAloneCheckNoHeartLink = true
+@if ClueHayeon == false
+  @flag DDayNoHeart = true
 @endif
 
-@if Avoidance >= 3
-  @flag Avoidance += 1
+@if Avoid >= 3
+  @flag Avoid += 1
 @endif
 
-@flag DDayDayChoiceUsed = true
-@flag DDayDayChoice = AloneStage
-@goto DDAY_03_PRE_CLOSE_ASSESS
+@flag DDayChoiceUsed = true
+@flag DDayChoice = AloneStage
+@goto DDay_03Assess
 ```
 
 주의:
 
-- `AccidentClueHaYeon`은 혼자 조사로 획득하지 않는다.
+- `ClueHayeon`은 혼자 조사로 획득하지 않는다.
 - 이 선택은 사고를 이해하는 데 도움이 되지만, 하연에게 말하러 가는 감정 조건을 대신하지 않는다.
 
 ## 11. 폐장 전 상태 평가
 
-### DDAY_03_PRE_CLOSE_ASSESS
+### DDay_03Assess
 
 ```text
-# DDAY_03_PRE_CLOSE_ASSESS
-@enter DDayDayChoiceUsed == true
+# DDay_03Assess
+@enter DDayChoiceUsed == true
 @bg 축제 폐장 직전 / 운동장과 교실 사이
 @music festival_close_fade
 @sfx distant_school_broadcast
@@ -551,8 +551,8 @@ D-3 미정리 보정 선택:
 상태 평가:
 
 ```text
-@eval DDayFinalBranch = EvaluateDDayFinalBranch()
-@goto DDAY_04_ROUTE_GATE
+@eval DDayResult = EvaluateDDayResult()
+@goto DDay_04Gate
 ```
 
 연출 분기 힌트:
@@ -568,32 +568,32 @@ D-3 미정리 보정 선택:
 
 ## 12. 최종 라우팅
 
-### DDAY_04_ROUTE_GATE
+### DDay_04Gate
 
 ```text
-# DDAY_04_ROUTE_GATE
-@enter DDayFinalBranch != None
+# DDay_04Gate
+@enter DDayResult != None
 ```
 
 라우팅:
 
 ```text
-@if DDayFinalBranch == TrueEnding
-  @goto DDAY_05_TRUE_APPROACH
-@elseif DDayFinalBranch == HayeonMissingLoop
-  @goto DDAY_06_FAIL_HAYEON_MISSING
-@elseif DDayFinalBranch == SoHaSad
-  @goto DDAY_07_SAD_SOHA_ENTRY
-@elseif DDayFinalBranch == SeoRinSad
-  @goto DDAY_08_SAD_SEORIN_ENTRY
-@elseif DDayFinalBranch == MiRuSad
-  @goto DDAY_09_SAD_MIRU_ENTRY
-@elseif DDayFinalBranch == AccidentUnlinkedLoop
-  @goto DDAY_10_FAIL_ACCIDENT_UNLINKED
-@elseif DDayFinalBranch == AvoidanceLoop
-  @goto DDAY_11_FAIL_AVOIDANCE_LOOP
+@if DDayResult == True
+  @goto DDay_05True
+@elseif DDayResult == HayeonMiss
+  @goto DDay_06HayeonMiss
+@elseif DDayResult == SohaSad
+  @goto DDay_07SohaSad
+@elseif DDayResult == SeorinSad
+  @goto DDay_08SeorinSad
+@elseif DDayResult == MiruSad
+  @goto DDay_09MiruSad
+@elseif DDayResult == AccFail
+  @goto DDay_10AccFail
+@elseif DDayResult == AvoidLoop
+  @goto DDay_11Avoid
 @else
-  @goto DDAY_06_FAIL_HAYEON_MISSING
+  @goto DDay_06HayeonMiss
 @endif
 ```
 
@@ -601,11 +601,11 @@ D-3 미정리 보정 선택:
 
 ## 13. 진엔딩 성공 스크립트
 
-### DDAY_05_TRUE_APPROACH
+### DDay_05True
 
 ```text
-# DDAY_05_TRUE_APPROACH
-@enter DDayFinalBranch == TrueEnding
+# DDay_05True
+@enter DDayResult == True
 @bg 학교 뒤편 야외 소무대 / 폐장 후
 @music true_end_confession_start
 @sfx distant_festival_shutdown
@@ -638,16 +638,16 @@ D-3 미정리 보정 선택:
 고백 전 회상 변주:
 
 ```text
-@if SoHaResolved == true
+@if SohaDone == true
   @insert "예전으로 돌아가 숨고 싶었던 마음을 지나서 왔어."
 @endif
-@if SeoRinResolved == true
+@if SeorinDone == true
   @insert "맞는 답이 아니라, 내가 고른 답이라고 말하려고 왔어."
 @endif
-@if MiRuResolved == true
+@if MiruDone == true
   @insert "누군가에게 필요한 사람인 척하면서 내 마음을 미루지 않으려고 왔어."
 @endif
-@if D2PremonitionPassed == true
+@if D2Passed == true
   @insert "네가 조용한 데서 숨을 고르는 사람이라는 걸, 이제는 조금 알아."
 @endif
 ```
@@ -726,26 +726,26 @@ D-3 미정리 보정 선택:
 상태 처리:
 
 ```text
-@flag HayeonMutualHeartConfirmed = true
-@flag HayeonMissingFromAccidentMemory = false
-@flag DDayTrueEndingReached = true
-@flag SundayWakeUpAfterDDay = true
-@end TrueEndingWakeUpSunday
+@flag HayeonMutual = true
+@flag HayeonMissMem = false
+@flag AccMemOk = true
+@flag DDayTrue = true
+@flag TE_Unlocked = true
+@jump TE_00_Sat
 ```
 
 다음 연결:
 
-- D+2 일요일 병실 기상 컷신
-- D+3 월요일 방학식 컷신
-- 진엔딩 크레딧
+- [D+2/D+3 진엔딩 후일담 컷신](./16_D+2_D+3_진엔딩_후일담_컷신.md)
+- [진엔딩 크레딧 콘티 초안](./11_진엔딩_크레딧_콘티_초안.md)
 
 ## 14. 하연 실패 루프 스크립트
 
-### DDAY_06_FAIL_HAYEON_MISSING
+### DDay_06HayeonMiss
 
 ```text
-# DDAY_06_FAIL_HAYEON_MISSING
-@enter DDayFinalBranch == HayeonMissingLoop
+# DDay_06HayeonMiss
+@enter DDayResult == HayeonMiss
 @bg 학교 뒤편 야외 소무대 / 폐장 후
 @music loop_fail_empty
 @sfx distant_metal_creak
@@ -794,8 +794,8 @@ D-3 미정리 보정 선택:
 상태 처리:
 
 ```text
-@flag HayeonMissingFromAccidentMemory = true
-@flag DDayTrueEndingReached = false
+@flag HayeonMissMem = true
+@flag DDayTrue = false
 @flag LoopCount += 1
 @flag ReturnDate = D25
 @end LoopToD25
@@ -803,11 +803,11 @@ D-3 미정리 보정 선택:
 
 ## 15. 소하 새드엔딩 진입 스크립트
 
-### DDAY_07_SAD_SOHA_ENTRY
+### DDay_07SohaSad
 
 ```text
-# DDAY_07_SAD_SOHA_ENTRY
-@enter DDayFinalBranch == SoHaSad || SoHaPressure == 3
+# DDay_07SohaSad
+@enter DDayResult == SohaSad || SohaPressure == 3
 @bg 오래된 등굣길처럼 보이는 축제장 가장자리
 @music sad_soha_warm_loop
 ```
@@ -834,19 +834,19 @@ D-3 미정리 보정 선택:
 상태 처리:
 
 ```text
-@flag EndingSoHaSadSeen = true
-@flag SoHaSadCount += 1
+@flag EndSohaSad = true
+@flag SohaSadCount += 1
 @flag LoopCount += 1
-@end SadEndingSoHaOrLoop
+@end SadEndingSohaOrLoop
 ```
 
 ## 16. 서린 새드엔딩 진입 스크립트
 
-### DDAY_08_SAD_SEORIN_ENTRY
+### DDay_08SeorinSad
 
 ```text
-# DDAY_08_SAD_SEORIN_ENTRY
-@enter DDayFinalBranch == SeoRinSad || SeoRinControl == 3
+# DDay_08SeorinSad
+@enter DDayResult == SeorinSad || SeorinControl == 3
 @bg 방송실 / 폐장 직전
 @music sad_seorin_ordered
 ```
@@ -872,19 +872,19 @@ D-3 미정리 보정 선택:
 상태 처리:
 
 ```text
-@flag EndingSeoRinSadSeen = true
-@flag SeoRinSadCount += 1
+@flag EndSeorinSad = true
+@flag SeorinSadCount += 1
 @flag LoopCount += 1
-@end SadEndingSeoRinOrLoop
+@end SadEndingSeorinOrLoop
 ```
 
 ## 17. 미루 새드엔딩 진입 스크립트
 
-### DDAY_09_SAD_MIRU_ENTRY
+### DDay_09MiruSad
 
 ```text
-# DDAY_09_SAD_MIRU_ENTRY
-@enter DDayFinalBranch == MiRuSad || MiRuDependence == 3
+# DDay_09MiruSad
+@enter DDayResult == MiruSad || MiruDepend == 3
 @bg 축제 도움 인원 대기실 / 문이 닫힌 복도
 @music sad_miru_musicbox
 ```
@@ -910,19 +910,19 @@ D-3 미정리 보정 선택:
 상태 처리:
 
 ```text
-@flag EndingMiRuSadSeen = true
-@flag MiRuSadCount += 1
+@flag EndMiruSad = true
+@flag MiruSadCount += 1
 @flag LoopCount += 1
-@end SadEndingMiRuOrLoop
+@end SadEndingMiruOrLoop
 ```
 
 ## 18. 사고 의미 미연결 루프
 
-### DDAY_10_FAIL_ACCIDENT_UNLINKED
+### DDay_10AccFail
 
 ```text
-# DDAY_10_FAIL_ACCIDENT_UNLINKED
-@enter DDayFinalBranch == AccidentUnlinkedLoop
+# DDay_10AccFail
+@enter DDayResult == AccFail
 @bg 야외 소무대 / 폐장 후
 @music loop_accident_unlinked
 ```
@@ -957,7 +957,7 @@ D-3 미정리 보정 선택:
 상태 처리:
 
 ```text
-@flag AccidentMeaningUnlinked = true
+@flag AccUnlinked = true
 @flag LoopCount += 1
 @flag ReturnDate = D25
 @end LoopToD25
@@ -965,11 +965,11 @@ D-3 미정리 보정 선택:
 
 ## 19. 회피 루프
 
-### DDAY_11_FAIL_AVOIDANCE_LOOP
+### DDay_11Avoid
 
 ```text
-# DDAY_11_FAIL_AVOIDANCE_LOOP
-@enter DDayFinalBranch == AvoidanceLoop
+# DDay_11Avoid
+@enter DDayResult == AvoidLoop
 @bg 축제 폐장 후 복도
 @music loop_avoidance_quiet
 ```
@@ -1006,7 +1006,7 @@ D-3 미정리 보정 선택:
 상태 처리:
 
 ```text
-@flag AvoidanceLoopSeen = true
+@flag AvoidLoopSeen = true
 @flag LoopCount += 1
 @flag ReturnDate = D25
 @end LoopToD25
@@ -1017,56 +1017,56 @@ D-3 미정리 보정 선택:
 실제 구현 시 사용할 평가 함수 의사코드다.
 
 ```text
-function EvaluateDDayFinalBranch():
+function EvaluateDDayResult():
     if HiddenCollapseCondition == true:
         return HiddenCollapse
 
-    if D2PremonitionPassed == false:
-        return HayeonMissingLoop
+    if D2Passed == false:
+        return HayeonMiss
 
-    if HaYeonTrust < 6 or HaYeonPaceRead < 3:
-        return HayeonMissingLoop
+    if HayeonTrust < 6 or HayeonPace < 3:
+        return HayeonMiss
 
-    if SoHaResolved == false and SoHaPressure == 3:
-        return SoHaSad
+    if SohaDone == false and SohaPressure == 3:
+        return SohaSad
 
-    if SeoRinResolved == false and SeoRinControl == 3:
-        return SeoRinSad
+    if SeorinDone == false and SeorinControl == 3:
+        return SeorinSad
 
-    if MiRuResolved == false and MiRuDependence == 3:
-        return MiRuSad
+    if MiruDone == false and MiruDepend == 3:
+        return MiruSad
 
-    if SoHaResolved == false or SeoRinResolved == false or MiRuResolved == false:
+    if SohaDone == false or SeorinDone == false or MiruDone == false:
         return RelationshipUnresolvedLoop
 
-    if AccidentClueScore < 3 or AccidentClueHaYeon == false:
-        return AccidentUnlinkedLoop
+    if ClueScore < 3 or ClueHayeon == false:
+        return AccFail
 
-    if Avoidance >= 4:
-        return AvoidanceLoop
+    if Avoid >= 4:
+        return AvoidLoop
 
-    return TrueEnding
+    return True
 ```
 
 ## 21. 실제 제작 시 분리 권장 에셋
 
 | 에셋 후보 | 포함 Scene |
 | --- | --- |
-| `SF_DDay_Common` | `DDAY_00_ENTRY_CAFE`, `DDAY_01_DAY_CHOICE_HUB`, `DDAY_03_PRE_CLOSE_ASSESS`, `DDAY_04_ROUTE_GATE` |
-| `SF_DDay_DayChoice_Hayeon` | `DDAY_02A_HAYEON_DAY` |
-| `SF_DDay_DayChoice_Soha` | `DDAY_02B_SOHA_DAY`, `DDAY_02B_SOHA_RESOLVE` |
-| `SF_DDay_DayChoice_Seorin` | `DDAY_02C_SEORIN_DAY`, `DDAY_02C_SEORIN_RESOLVE` |
-| `SF_DDay_DayChoice_Miru` | `DDAY_02D_MIRU_DAY`, `DDAY_02D_MIRU_RESOLVE` |
-| `SF_DDay_DayChoice_Alone` | `DDAY_02E_ALONE_STAGE_CHECK` |
-| `SF_DDay_TrueEnding` | `DDAY_05_TRUE_APPROACH` |
-| `SF_DDay_FailLoops` | `DDAY_06_FAIL_HAYEON_MISSING`, `DDAY_10_FAIL_ACCIDENT_UNLINKED`, `DDAY_11_FAIL_AVOIDANCE_LOOP` |
-| `SF_DDay_SadEntries` | `DDAY_07_SAD_SOHA_ENTRY`, `DDAY_08_SAD_SEORIN_ENTRY`, `DDAY_09_SAD_MIRU_ENTRY` |
+| `SF_DDay` | `DDay_00Entry`, `DDay_01Choice`, `DDay_03Assess`, `DDay_04Gate` |
+| `SF_DDayHayeon` | `DDay_02Hayeon` |
+| `SF_DDaySoha` | `DDay_02Soha`, `DDay_02SohaDone` |
+| `SF_DDaySeorin` | `DDay_02Seorin`, `DDay_02SeorinDone` |
+| `SF_DDayMiru` | `DDay_02Miru`, `DDay_02MiruDone` |
+| `SF_DDayAlone` | `DDay_02Alone` |
+| `SF_DDayTrue` | `DDay_05True` |
+| `SF_DDayFail` | `DDay_06HayeonMiss`, `DDay_10AccFail`, `DDay_11Avoid` |
+| `SF_DDaySad` | `DDay_07SohaSad`, `DDay_08SeorinSad`, `DDay_09MiruSad` |
 
 ## 22. 다음 연결
 
 이 문서 이후 우선 작업은 두 갈래다.
 
-1. 진엔딩 이후 [엔딩과 루프](./05_엔딩과_루프.md)의 D+2 병실 장면과 D+3 방학식 장면을 실제 컷신 단위로 분리한다.
+1. 진엔딩 이후 D+2 병실 장면과 D+3 방학식 장면은 [D+2/D+3 진엔딩 후일담 컷신](./16_D+2_D+3_진엔딩_후일담_컷신.md)을 따른다.
 2. 이 스크립트 분할을 시스템 문서의 StoryFlow Scene/Branch/Transition 설계와 맞춘다.
 
-현재 기준에서는 D+2/D+3 컷신 분리가 더 먼저다. 그래야 `DDAY_05_TRUE_APPROACH` 이후의 연결이 완성된다.
+현재 기준에서는 `DDay_05True` 이후 `TE_00_Sat`로 넘기고, D+2/D+3 후일담이 끝난 뒤 크레딧으로 연결한다.
