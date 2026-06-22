@@ -415,15 +415,6 @@ def build_html(docs: list[dict]) -> str:
     .inline-toc a:hover { background:var(--accent-soft); color:var(--accent); text-decoration:none; }
     .inline-toc .lv3 { padding-left:16px; color:#4b5563; }
     .inline-toc .lv4, .inline-toc .lv5, .inline-toc .lv6 { padding-left:26px; color:var(--muted); }
-    .reading-hint {
-      margin:0 0 18px;
-      border:1px solid var(--line);
-      border-radius:16px;
-      background:#f8fbff;
-      color:#475467;
-      padding:12px 14px;
-      font-size:14px;
-    }
     .doc-body { font-size:16px; }
     .doc-body h2, .doc-body h3, .doc-body h4, .doc-body h5, .doc-body h6 { line-height:1.28; letter-spacing:-.04em; scroll-margin-top:92px; color:#111827; }
     .doc-body h2 { font-size:34px; border-bottom:2px solid var(--line); padding-bottom:12px; margin:0 0 18px; }
@@ -664,8 +655,7 @@ def build_html(docs: list[dict]) -> str:
       if (isContinuousReadingDoc(doc)) return false;
       const headings = [...body.querySelectorAll('h3')];
       if (!headings.length) return false;
-      const autoCollapse = headings.length > 6 || (doc.plain || '').length > 12000;
-      headings.forEach((heading, index) => {
+      headings.forEach(heading => {
         const originalHeadingText = heading.textContent.trim();
         const compactHeadingText = headingLabel(doc, originalHeadingText);
         if (compactHeadingText !== originalHeadingText) {
@@ -677,7 +667,7 @@ def build_html(docs: list[dict]) -> str:
 
         const section = document.createElement('details');
         section.className = 'planning-section';
-        section.open = !autoCollapse || index < 2;
+        section.open = true;
 
         const summary = document.createElement('summary');
         const sectionContent = document.createElement('div');
@@ -704,12 +694,6 @@ def build_html(docs: list[dict]) -> str:
         }
       });
       body.classList.add('sectioned');
-      if (autoCollapse) {
-        const hint = document.createElement('p');
-        hint.className = 'reading-hint';
-        hint.textContent = '긴 문서는 처음 두 섹션만 펼쳐 둡니다. 상단 버튼으로 전체를 펼치거나, 목차에서 필요한 섹션으로 바로 이동하세요.';
-        body.insertBefore(hint, body.firstChild);
-      }
       return true;
     }
     function setAllSections(open) {
@@ -727,7 +711,37 @@ def build_html(docs: list[dict]) -> str:
       setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
       return true;
     }
-    function openDoc(id) {
+    function normalizeDocPath(path) {
+      const parts = [];
+      String(path || '').split('/').forEach(part => {
+        if (!part || part === '.') return;
+        if (part === '..') parts.pop();
+        else parts.push(part);
+      });
+      return parts.join('/');
+    }
+    function docFromMarkdownHref(href, currentDoc) {
+      if (!href || !currentDoc) return null;
+      if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('#')) return null;
+      const [rawPath, rawHash = ''] = href.split('#');
+      if (!rawPath.toLowerCase().endsWith('.md')) return null;
+      const decodedPath = decodeURIComponent(rawPath).replace(/\\/g, '/');
+      const baseParts = (currentDoc.path || '').split('/');
+      baseParts.pop();
+      const base = baseParts.join('/');
+      const normalized = normalizeDocPath((base ? base + '/' : '') + decodedPath);
+      const doc = docs.find(d => d.path === normalized);
+      return doc ? { doc, hash: rawHash ? decodeURIComponent(rawHash) : '' } : null;
+    }
+    function bindInternalMarkdownLinks(doc) {
+      content.querySelectorAll('.doc-body a[href]').forEach(link => {
+        const target = docFromMarkdownHref(link.getAttribute('href'), doc);
+        if (!target) return;
+        link.dataset.docLink = target.doc.id;
+        link.title = `통합 기획서에서 ${target.doc.title} 열기`;
+      });
+    }
+    function openDoc(id, headingHash = '') {
       const doc = docs.find(d => d.id === id) || docs[0];
       currentId = doc.id;
       content.innerHTML = `
@@ -751,6 +765,7 @@ def build_html(docs: list[dict]) -> str:
         </article>
       `;
       const hasSections = enhanceDocBody(doc);
+      bindInternalMarkdownLinks(doc);
       document.getElementById('copyPath').addEventListener('click', async () => {
         try { await navigator.clipboard.writeText(doc.path); } catch (_) {}
       });
@@ -765,8 +780,12 @@ def build_html(docs: list[dict]) -> str:
       }
       document.getElementById('backHome').addEventListener('click', renderHome);
       renderList();
-      location.hash = doc.id;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (headingHash && revealHeading('#' + headingHash)) {
+        history.replaceState(null, '', '#' + headingHash);
+      } else {
+        location.hash = doc.id;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
       if (window.innerWidth <= 820) library.classList.remove('open');
     }
     function quickCard(label, title, desc) {
@@ -808,7 +827,21 @@ def build_html(docs: list[dict]) -> str:
 
     content.addEventListener('click', event => {
       const quick = event.target.closest('[data-quick]');
-      if (quick) openDoc(quick.dataset.quick);
+      if (quick) {
+        event.preventDefault();
+        openDoc(quick.dataset.quick);
+        return;
+      }
+      const markdownLink = event.target.closest('.doc-body a[href]');
+      if (markdownLink) {
+        const currentDoc = docs.find(d => d.id === currentId);
+        const target = docFromMarkdownHref(markdownLink.getAttribute('href'), currentDoc);
+        if (target) {
+          event.preventDefault();
+          openDoc(target.doc.id, target.hash);
+          return;
+        }
+      }
       const tocLink = event.target.closest('.inline-toc a, .doc-side-toc a');
       if (tocLink && tocLink.hash) {
         event.preventDefault();
@@ -852,4 +885,3 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
-
