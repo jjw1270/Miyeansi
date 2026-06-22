@@ -7,7 +7,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 PROJECT_ROOT = ROOT.parent
-OUTPUT = PROJECT_ROOT / '통합_기획서.html'
+OUTPUT = PROJECT_ROOT / 'index.html'
+LEGACY_OUTPUT = PROJECT_ROOT / '통합_기획서.html'
 
 EXCLUDE_NAMES = {
     '통합_기획서.html',
@@ -880,8 +881,14 @@ def build_html(docs: list[dict]) -> str:
 
 def main() -> None:
     docs = collect_docs()
-    OUTPUT.write_text(build_html(docs), encoding='utf-8')
-    print(f'generated {OUTPUT.relative_to(PROJECT_ROOT)} from {len(docs)} markdown files')
+    html_text = build_html(docs)
+    OUTPUT.write_text(html_text, encoding='utf-8')
+    LEGACY_OUTPUT.write_text(html_text, encoding='utf-8')
+    print(
+        f'generated {OUTPUT.relative_to(PROJECT_ROOT)} '
+        f'and {LEGACY_OUTPUT.relative_to(PROJECT_ROOT)} '
+        f'from {len(docs)} markdown files'
+    )
 
 
 if __name__ == '__main__':
