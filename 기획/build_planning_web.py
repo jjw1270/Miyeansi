@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 PROJECT_ROOT = ROOT.parent
 OUTPUT = PROJECT_ROOT / 'index.html'
-LEGACY_OUTPUT = PROJECT_ROOT / '통합_기획서.html'
+LEGACY_OUTPUT = ROOT / '통합_기획서.html'
 
 EXCLUDE_NAMES = {
     '통합_기획서.html',
