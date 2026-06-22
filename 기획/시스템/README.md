@@ -3,13 +3,14 @@
 ## 문서 목록
 
 - [미연시 코어 시스템 요구사항](./미연시_코어_시스템_요구사항.md)
+- [VisualNovelPlugin 1차 구현 범위](./VisualNovelPlugin_1차_구현범위.md)
 - [하루 행동 시스템](./하루_행동_시스템.md)
 
 ## 현재 초점
 
 스토리 기획을 실제 게임 구조로 옮기기 위해 날짜, 행동 슬롯, 병렬 이벤트, 조건 분기, 루프/엔딩 상태를 정리한다.
 
-현재 판단은 StoryFlow 코어를 미연시 전용으로 크게 바꾸지 않고, 별도 `VisualNovelPlugin`을 만들어 StoryFlow 위에 `StoryState`, 이벤트 허브, VN용 Shot/Branch 템플릿을 얹는 방향이다.
+현재 판단은 StoryFlow 코어를 미연시 전용으로 크게 바꾸지 않고, 별도 `VisualNovelPlugin`을 만들어 StoryFlow 위에 `StoryState`, 이벤트 허브, VN용 Shot/Branch 템플릿을 얹는 방향이다. 1차 구현 범위는 `VisualNovelPlugin_1차_구현범위.md`를 따른다.
 
 역할 분리:
 
@@ -30,3 +31,5 @@
 - [D-Day 스크립트 분할](../스토리/13_D-Day_스크립트_분할.md): D-Day 공통 진입, 낮 선택, 폐장 후 평가, 진엔딩/실패/새드 분기를 StoryFlow 제작 단위로 옮기기 위한 스크립트 기준표
 
 - [D+2/D+3 진엔딩 후일담 컷신](../스토리/16_D+2_D+3_진엔딩_후일담_컷신.md): `TE_*` 후일담 Scene/Shot ID와 진엔딩 크레딧 연결 기준
+
+- [전체 스토리 제작용 시나리오](../스토리/17_전체_스토리_제작용_시나리오.md): 소설형 원고를 StoryFlow SceneID, Asset, 상태 키, 다음 장면 연결로 옮긴 제작용 기준표
