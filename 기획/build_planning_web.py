@@ -240,9 +240,16 @@ def build_html(docs: list[dict]) -> str:
       --reader-max:1040px;
     }
     * { box-sizing:border-box; }
-    html { scroll-behavior:smooth; }
+    html {
+      scroll-behavior:smooth;
+      width:100%;
+      overflow-x:hidden;
+      -webkit-text-size-adjust:100%;
+    }
     body {
       margin:0;
+      width:100%;
+      overflow-x:hidden;
       min-height:100vh;
       background:
         radial-gradient(circle at 10% 0%, rgba(79,70,229,.12), transparent 28rem),
@@ -274,7 +281,7 @@ def build_html(docs: list[dict]) -> str:
       background:linear-gradient(135deg,var(--accent),var(--accent-2));
       box-shadow:0 10px 24px rgba(79,70,229,.24);
     }
-    .brand h1 { margin:0; font-size:18px; line-height:1.1; letter-spacing:-.045em; }
+    .brand h1 { margin:0; font-size:18px; line-height:1.1; letter-spacing:-.045em; overflow-wrap:anywhere; }
     .brand p { margin:2px 0 0; color:var(--muted); font-size:12px; }
     .top-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
     button, .button {
@@ -299,6 +306,8 @@ def build_html(docs: list[dict]) -> str:
       max-width:1520px;
       margin:0 auto;
       padding:22px;
+      width:100%;
+      min-width:0;
     }
     .library {
       position:sticky;
@@ -351,19 +360,21 @@ def build_html(docs: list[dict]) -> str:
       border:1px solid var(--line);
       border-radius:26px;
       box-shadow:var(--shadow);
+      min-width:0;
     }
     .dashboard {
       overflow:hidden;
     }
     .doc-view { overflow:visible; }
     .dashboard-head, .doc-head { padding:34px 38px; border-bottom:1px solid var(--line); background:linear-gradient(135deg,#ffffff 0,#f6f8ff 100%); }
-    .dashboard h2, .doc-head h2 { margin:8px 0 0; font-size:clamp(30px,4vw,50px); line-height:1.13; letter-spacing:-.06em; }
+    .dashboard h2, .doc-head h2 { margin:8px 0 0; font-size:clamp(30px,4vw,50px); line-height:1.13; letter-spacing:-.06em; overflow-wrap:anywhere; }
     .dashboard-head p, .doc-head p { max-width:760px; color:#475467; margin:14px 0 0; font-size:16px; }
     .dashboard-body, .doc-body { padding:32px 40px; }
     .doc-reading {
       display:grid;
       grid-template-columns:minmax(0,1fr) 260px;
       align-items:start;
+      min-width:0;
     }
     .doc-side-toc {
       position:sticky;
@@ -417,8 +428,8 @@ def build_html(docs: list[dict]) -> str:
     .inline-toc a:hover { background:var(--accent-soft); color:var(--accent); text-decoration:none; }
     .inline-toc .lv3 { padding-left:16px; color:#4b5563; }
     .inline-toc .lv4, .inline-toc .lv5, .inline-toc .lv6 { padding-left:26px; color:var(--muted); }
-    .doc-body { font-size:16px; }
-    .doc-body h2, .doc-body h3, .doc-body h4, .doc-body h5, .doc-body h6 { line-height:1.28; letter-spacing:-.04em; scroll-margin-top:92px; color:#111827; }
+    .doc-body { font-size:16px; min-width:0; overflow-wrap:break-word; }
+    .doc-body h2, .doc-body h3, .doc-body h4, .doc-body h5, .doc-body h6 { line-height:1.28; letter-spacing:-.04em; scroll-margin-top:92px; color:#111827; overflow-wrap:anywhere; }
     .doc-body h2 { font-size:34px; border-bottom:2px solid var(--line); padding-bottom:12px; margin:0 0 18px; }
     .doc-body h3 { font-size:26px; margin:38px 0 14px; }
     .doc-body h4 { font-size:21px; margin:30px 0 10px; }
@@ -426,14 +437,15 @@ def build_html(docs: list[dict]) -> str:
     .doc-body ul, .doc-body ol { padding-left:1.35rem; }
     .doc-body li { margin:5px 0; }
     .doc-body code { background:#eef2ff; color:#3730a3; border:1px solid #dfe3ff; border-radius:6px; padding:1px 5px; }
-    .doc-body pre { background:#111827; color:#e5e7eb; border-radius:16px; padding:16px; overflow:auto; box-shadow:inset 0 0 0 1px rgba(255,255,255,.08); }
+    .doc-body pre { background:#111827; color:#e5e7eb; border-radius:16px; padding:16px; overflow:auto; max-width:100%; -webkit-overflow-scrolling:touch; box-shadow:inset 0 0 0 1px rgba(255,255,255,.08); }
     .doc-body pre code { background:transparent; color:inherit; border:0; padding:0; }
     .doc-body blockquote { margin:14px 0; border-left:4px solid var(--accent); background:#f5f7ff; padding:12px 15px; border-radius:12px; color:#30364a; }
-    .doc-body .table-wrap { overflow:auto; margin:16px 0; border:1px solid var(--line); border-radius:14px; background:var(--panel); }
+    .doc-body .table-wrap { overflow:auto; max-width:100%; margin:16px 0; border:1px solid var(--line); border-radius:14px; background:var(--panel); -webkit-overflow-scrolling:touch; }
     .doc-body table { width:100%; border-collapse:collapse; min-width:620px; background:var(--panel); }
     .doc-body th, .doc-body td { border:1px solid var(--line); padding:10px 11px; vertical-align:top; }
     .doc-body th { background:#f1f5f9; text-align:left; color:#344054; }
     .doc-body tr:nth-child(even) td { background:#fbfdff; }
+    .doc-body img { max-width:100%; height:auto; }
     .doc-body.sectioned > h2:first-child { margin-bottom:24px; }
     .planning-section {
       margin:18px 0;
@@ -509,17 +521,73 @@ def build_html(docs: list[dict]) -> str:
       .doc-side-toc nav { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
     }
     @media (max-width:820px) {
-      .topbar { align-items:flex-start; flex-direction:column; }
+      .topbar {
+        align-items:stretch;
+        flex-direction:column;
+        gap:12px;
+        padding:12px;
+      }
+      .brand { align-items:flex-start; gap:10px; }
+      .logo { width:32px; height:32px; border-radius:10px; flex:0 0 auto; }
+      .brand h1 { font-size:16px; line-height:1.22; }
+      .brand p { font-size:11px; line-height:1.35; }
+      .top-actions {
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        width:100%;
+        gap:7px;
+      }
+      .top-actions button, .top-actions .button {
+        width:100%;
+        justify-content:center;
+        text-align:center;
+        padding:9px 10px;
+        box-shadow:none;
+      }
       .mobile-library-toggle { display:inline-flex; }
-      .shell { grid-template-columns:1fr; }
-      .library { position:relative; top:auto; height:auto; display:none; }
+      .shell { grid-template-columns:1fr; padding:12px; gap:12px; }
+      .library {
+        position:relative;
+        top:auto;
+        height:auto;
+        max-height:72vh;
+        display:none;
+        border-radius:18px;
+        padding:14px;
+      }
       .library.open { display:block; }
       .reader { max-width:none; }
-      .dashboard-head, .doc-head, .dashboard-body, .doc-body { padding:20px; }
-      .doc-body { font-size:15px; }
-      .doc-side-toc { padding:18px 20px; }
-      .planning-section summary { grid-template-columns:1fr; }
+      .dashboard, .doc-view { border-radius:18px; }
+      .dashboard-head, .doc-head, .dashboard-body, .doc-body { padding:18px; }
+      .dashboard h2, .doc-head h2 { font-size:clamp(26px,8vw,36px); letter-spacing:-.045em; }
+      .dashboard-head p, .doc-head p { font-size:14px; line-height:1.6; }
+      .doc-body { font-size:15px; line-height:1.72; }
+      .doc-body h2 { font-size:26px; margin:0 0 16px; }
+      .doc-body h3 { font-size:21px; margin:30px 0 12px; }
+      .doc-body h4 { font-size:18px; margin:24px 0 10px; }
+      .doc-body pre { margin-left:-4px; margin-right:-4px; padding:12px; border-radius:12px; font-size:12px; line-height:1.55; }
+      .doc-body code { word-break:break-word; }
+      .doc-body .table-wrap { margin-left:-4px; margin-right:-4px; border-radius:12px; }
+      .doc-body table { min-width:560px; font-size:13px; }
+      .doc-body th, .doc-body td { padding:8px 9px; }
+      .inline-toc nav { grid-template-columns:1fr; padding:0 12px 12px; }
+      .inline-toc a { font-size:12px; }
+      .doc-side-toc { display:none; }
+      .grid.cards { grid-template-columns:1fr; }
+      .planning-section { border-radius:14px; margin:14px 0; }
+      .planning-section summary { grid-template-columns:1fr; padding:14px; }
       .planning-section summary::after { grid-column:1; grid-row:auto; width:max-content; }
+      .planning-section h3,
+      .planning-section h3.compact-date-title { font-size:21px; }
+      .section-content { padding:2px 14px 16px; }
+    }
+    @media (max-width:420px) {
+      .top-actions { grid-template-columns:1fr; }
+      .shell { padding:10px; }
+      .dashboard-head, .doc-head, .dashboard-body, .doc-body { padding:15px; }
+      .doc-body { font-size:14px; }
+      .doc-body table { min-width:500px; }
+      .doc-body ul, .doc-body ol { padding-left:1.1rem; }
     }
   </style>
 </head>
