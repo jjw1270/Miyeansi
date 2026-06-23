@@ -1,0 +1,692 @@
+# VisualNovelPlugin 데이터 상세 설계
+
+이 문서는 `VisualNovelPlugin` 1차 구현에 필요한 `FVNStoryState`와 `UVNEventSetAsset`의 상세 필드를 확정한다.
+
+상위 범위는 [VisualNovelPlugin 1차 구현 범위](./VisualNovelPlugin_1차_구현범위.md)를 따른다. 이 문서는 실제 C++ `USTRUCT`, `UDataAsset`, SaveGame, 에디터 입력 필드로 옮길 때의 기준이다.
+
+## 1. 네이밍 기준
+
+프로젝트 코드 스타일과 StoryFlow 구조를 따른다.
+
+| 대상 | 규칙 | 예시 |
+|---|---|---|
+| USTRUCT 타입 | `FVN` 접두어 + 짧은 PascalCase | `FVNStoryState`, `FVNEventDef` |
+| UObject/UDataAsset 타입 | `UVN` 접두어 + 짧은 PascalCase | `UVNEventSetAsset` |
+| enum 타입 | `EVN` 접두어 + 짧은 PascalCase | `EVNDaySlot` |
+| UPROPERTY 필드 | 짧은 PascalCase | `CurrentDay`, `BoolMap`, `StartSceneID` |
+| 내부 멤버 변수 | 기존 코드처럼 앞 `_` + PascalCase | `_StoryState`, `_EventSet` |
+| 함수 인자 | 기존 코드처럼 앞 `_` + snake_case | `_event_id`, `_state` |
+| StoryState 키 | 짧은 PascalCase | `HayeonTrust`, `SohaDone`, `TE_Monday` |
+
+문장처럼 긴 필드명은 쓰지 않는다. 의미가 긴 경우 필드명은 짧게 두고 툴팁/문서 설명으로 보완한다.
+
+## 2. 공통 ID 타입
+
+StoryFlow의 `FStorySceneID`, `FStoryShotID`, `FStoryFlowRef`를 그대로 사용한다.
+
+VN 전용 ID는 `FName` 래퍼를 만들 수 있지만 1차에서는 과도한 래퍼를 늘리지 않는다.
+
+| ID | 권장 타입 | 예시 | 용도 |
+|---|---|---|---|
+| EventID | `FName` | `Cafe_04DayOne` | EventSet 안의 이벤트 고유 ID |
+| CharID | `FName` | `Hayeon` | 캐릭터 진행도 키 |
+| FlagID | `FName` | `SohaDone` | bool 상태 키 |
+| ValueID | `FName` | `HayeonTrust` | int 상태 키 |
+| FragID | `FName` | `ClueSeorin` | 기억 조각 키 |
+| EndingID | `FName` | `TrueEnding` | 엔딩 기록 키 |
+
+## 3. enum 1차 후보
+
+### EVNDaySlot
+
+하루 행동 시스템의 슬롯을 코드에서 안정적으로 다루기 위한 enum이다.
+
+```cpp
+UENUM(BlueprintType)
+enum class EVNDaySlot : uint8
+{
+	None,
+	Morning,
+	Lunch,
+	AfterSchool,
+	Evening,
+	Night,
+};
+```
+
+| 값 | 용도 |
+|---|---|
+| `None` | 슬롯 없음, 자동 컷신, 프롤로그/엔딩 |
+| `Morning` | 등교/오전 자동 이벤트 |
+| `Lunch` | 점심 이벤트 |
+| `AfterSchool` | 방과 후 핵심 선택 |
+| `Evening` | 저녁 정산/자동 이벤트 |
+| `Night` | 특수 컷신, 폐장 후, 루프 전환 |
+
+### EVNEventRunMode
+
+이벤트 재생 방식을 나타낸다.
+
+```cpp
+UENUM(BlueprintType)
+enum class EVNEventRunMode : uint8
+{
+	Normal,
+	Auto,
+	Once,
+	Repeatable,
+	Summary,
+};
+```
+
+| 값 | 용도 |
+|---|---|
+| `Normal` | 일반 선택 이벤트 |
+| `Auto` | 조건 충족 시 선택 없이 바로 실행 |
+| `Once` | 1회만 실행 |
+| `Repeatable` | 반복 실행 가능 |
+| `Summary` | 루프 이후 압축 재방문 후보 |
+
+### EVNStateOp
+
+상태 변경 연산이다.
+
+```cpp
+UENUM(BlueprintType)
+enum class EVNStateOp : uint8
+{
+	Set,
+	Add,
+	Remove,
+	Max,
+	Min,
+};
+```
+
+| 값 | bool | int | set |
+|---|---|---|---|
+| `Set` | true/false 설정 | 값 대입 | 전체 대체는 1차 비권장 |
+| `Add` | true 처리 | 값 증가 | 항목 추가 |
+| `Remove` | false 처리 | 값 감소는 비권장 | 항목 제거 |
+| `Max` | 사용 안 함 | 큰 값으로 갱신 | 사용 안 함 |
+| `Min` | 사용 안 함 | 작은 값으로 갱신 | 사용 안 함 |
+
+### EVNCompareOp
+
+조건 비교 연산이다.
+
+```cpp
+UENUM(BlueprintType)
+enum class EVNCompareOp : uint8
+{
+	Equal,
+	NotEqual,
+	Greater,
+	GreaterEqual,
+	Less,
+	LessEqual,
+	Exists,
+	NotExists,
+};
+```
+
+### EVNStateDomain
+
+상태/조건이 조회하거나 변경할 영역이다. 실제 헤더에서는 `FVNStateChange`, `FVNCondition`보다 먼저 선언한다.
+
+```cpp
+UENUM(BlueprintType)
+enum class EVNStateDomain : uint8
+{
+	Bool,
+	Int,
+	Name,
+	Fragment,
+	SeenEvent,
+	Ending,
+};
+```
+
+| 값 | 대상 |
+|---|---|
+| `Bool` | `BoolMap` |
+| `Int` | `IntMap` |
+| `Name` | `NameMap` |
+| `Fragment` | `Fragments` |
+| `SeenEvent` | `SeenEvents` |
+| `Ending` | `EndingMap` |
+
+## 4. FVNStoryState
+
+`FVNStoryState`는 저장 가능한 진행 상태의 루트 구조다.
+
+### 4.1 C++ 구조 후보
+
+```cpp
+USTRUCT(BlueprintType)
+struct FVNStoryState
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName CurrentDay = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName CurrentWeek = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EVNDaySlot CurrentSlot = EVNDaySlot::None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 LoopCount = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FStoryFlowRef CurrentFlowRef;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TMap<FName, bool> BoolMap;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TMap<FName, int32> IntMap;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TMap<FName, FName> NameMap;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TMap<FName, FVNCharState> CharMap;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSet<FName> Fragments;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TMap<FName, FVNEndingState> EndingMap;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSet<FName> SeenEvents;
+};
+```
+
+### 4.2 루트 필드 상세
+
+| 필드 | 타입 | 기본값 | 저장 | 설명 |
+|---|---|---|---|---|
+| `CurrentDay` | `FName` | `None` | 필수 | 현재 날짜 ID. 예: `D25`, `D1`, `DDay`, `DPlus2` |
+| `CurrentWeek` | `FName` | `None` | 필수 | 주차 ID. 예: `Week1`, `FinalWeek`, `TrueEnding` |
+| `CurrentSlot` | `EVNDaySlot` | `None` | 필수 | 현재 하루 슬롯 |
+| `LoopCount` | `int32` | `0` | 필수 | 실패 루프 횟수 |
+| `CurrentFlowRef` | `FStoryFlowRef` | invalid | 필수 | 저장/로드 복원 위치 |
+| `BoolMap` | `TMap<FName, bool>` | empty | 필수 | 플래그 상태 |
+| `IntMap` | `TMap<FName, int32>` | empty | 필수 | 호감도/압박/회피 같은 수치 상태 |
+| `NameMap` | `TMap<FName, FName>` | empty | 선택 | `DDayResult`, 마지막 선택 등 이름형 상태 |
+| `CharMap` | `TMap<FName, FVNCharState>` | empty | 필수 | 캐릭터별 진행도 |
+| `Fragments` | `TSet<FName>` | empty | 필수 | 기억 조각/사고 단서 보유 목록 |
+| `EndingMap` | `TMap<FName, FVNEndingState>` | empty | 필수 | 엔딩별 관람/반복 기록 |
+| `SeenEvents` | `TSet<FName>` | empty | 필수 | 이미 본 이벤트 ID |
+
+### 4.3 날짜 ID 표기
+
+파일명과 문서에서는 `D-25`, `D+2`를 사용하지만, 코드/키에서는 특수문자를 줄인다.
+
+| 문서 표기 | 코드 ID | 설명 |
+|---|---|---|
+| D-25 | `D25` | 루프 시작 월요일 |
+| D-1 | `D1` | 축제 1일차 |
+| D-Day | `DDay` | 축제 마지막 날 |
+| D+1 | `DPlus1` | 토요일 암전 |
+| D+2 | `DPlus2` | 일요일 병실 기상 |
+| D+3 | `DPlus3` | 월요일 방학식 |
+
+게임 UI와 대사에서는 이 ID를 노출하지 않고 자연어를 사용한다.
+
+## 5. FVNCharState
+
+캐릭터별 진행 상태다. 캐릭터 키는 `Hayeon`, `Soha`, `Seorin`, `Miru`를 사용한다.
+
+```cpp
+USTRUCT(BlueprintType)
+struct FVNCharState
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Affinity = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Trust = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Phase = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Strain = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EVNDaySlot LastSlot = EVNDaySlot::None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName LastDay = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bDone = false;
+};
+```
+
+| 필드 | 타입 | 기본값 | 설명 |
+|---|---|---|---|
+| `Affinity` | `int32` | 0 | 일반 호감/친밀도. 진엔딩 조건 자체는 아님 |
+| `Trust` | `int32` | 0 | 핵심 신뢰도. 하연은 `HayeonTrust`와 연동 가능 |
+| `Phase` | `int32` | 0 | 루트 이벤트 단계 |
+| `Strain` | `int32` | 0 | 관계 균열/압박/의존 누적. 캐릭터별 의미는 프로젝트 데이터에서 해석 |
+| `LastSlot` | `EVNDaySlot` | `None` | 마지막으로 선택한 슬롯 |
+| `LastDay` | `FName` | `None` | 마지막으로 선택한 날짜 |
+| `bDone` | `bool` | false | 해당 캐릭터 클라이맥스 해결 여부 |
+
+캐릭터별 특수 수치가 필요한 경우 `IntMap`에 짧은 키로 둔다.
+
+| 키 | 의미 |
+|---|---|
+| `HayeonTrust` | 하연 신뢰 |
+| `HayeonPace` | 하연의 속도 이해 |
+| `SohaPressure` | 소하 과거 미련 압박 |
+| `SeorinControl` | 서린에게 정답을 맡기는 경향 |
+| `MiruDepend` | 미루 의존 누적 |
+| `Avoid` | 회피 누적 |
+
+## 6. FVNEndingState
+
+엔딩 기록이다.
+
+```cpp
+USTRUCT(BlueprintType)
+struct FVNEndingState
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bSeen = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 SeenCount = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName LastSeenDay = NAME_None;
+};
+```
+
+| 필드 | 타입 | 기본값 | 설명 |
+|---|---|---|---|
+| `bSeen` | `bool` | false | 한 번이라도 본 엔딩인지 |
+| `SeenCount` | `int32` | 0 | 반복 관람 횟수 |
+| `LastSeenDay` | `FName` | `None` | 마지막 관람 시점 |
+
+1차 엔딩 ID:
+
+```text
+TrueEnding
+HayeonMiss
+SohaSad
+SeorinSad
+MiruSad
+AccFail
+AvoidLoop
+HiddenCollapse
+```
+
+## 7. 상태 키 초기값
+
+Miyeansi 1차 프로토타입의 초기 상태다.
+
+### BoolMap
+
+| 키 | 기본값 | 설명 |
+|---|---|---|
+| `ComaStart` | false | 현실 사고 이후 혼수상태 내면세계 진입 |
+| `MetHayeon` | false | 하연 전학 이벤트 완료 |
+| `HayeonBoothD1` | false | 축제 1일차 하연 부스 운영 완료 |
+| `HayeonD2` | false | D-2 말하지 못한 예감에서 하연의 조용한 동선을 이해 |
+| `DDayHayeon` | false | D-Day 낮 하연 보정 선택 성공 |
+| `HayeonMutual` | false | 하연과 상호 마음 확인 조건 충족 |
+| `SohaDone` | false | 소하 관계 정리 완료 |
+| `SeorinDone` | false | 서린 관계 정리 완료 |
+| `MiruDone` | false | 미루 관계 정리 완료 |
+| `DDayTrueReady` | false | D-Day 진엔딩 선택 가능 |
+| `DDayTrue` | false | D-Day 진엔딩 분기 통과 |
+| `AccMemOk` | false | 사고 기억을 현실의 기억으로 받아들임 |
+| `TE_Unlocked` | false | 진엔딩 후일담 진입 가능 |
+| `TE_Wake` | false | 일요일 병실 기상 완료 |
+| `TE_Monday` | false | 월요일 방학식 도달 |
+| `TE_Credit` | false | 진엔딩 크레딧 진입 가능 |
+| `MissPhysClue` | false | 사고 물리 단서 부족 보조 플래그 |
+| `DDayNoHeart` | false | 하연 감정 단서 부족 보조 플래그 |
+| `HiddenCollapse` | false | 히든 붕괴 엔딩 조건 충족 |
+| `CeremonySeen` | false | 방학식 참석 완료 |
+
+### IntMap
+
+| 키 | 기본값 | 설명 |
+|---|---|---|
+| `HayeonTrust` | 0 | 하연 신뢰 |
+| `HayeonPace` | 0 | 하연의 속도 이해 |
+| `SohaPressure` | 0 | 소하 과거 미련 압박 |
+| `SeorinControl` | 0 | 서린에게 답을 맡기는 정도 |
+| `MiruDepend` | 0 | 미루 의존 누적 |
+| `Avoid` | 0 | 회피 누적 |
+
+### Fragments
+
+| 키 | 의미 |
+|---|---|
+| `ClueSoha` | 하연을 좋아했다는 감정 단서 |
+| `ClueSeorin` | 소무대 임시 구조물 위험 단서 |
+| `ClueMiru` | 출입금지 표지/고정끈 문제 단서 |
+| `ClueHayeon` | 하연과 함께 사고 기억에 도달할 감정 단서 |
+
+### NameMap
+
+| 키 | 기본값 | 설명 |
+|---|---|---|
+| `DDayChoice` | `None` | D-Day 낮 선택 대상 |
+| `DDayResult` | `None` | 최종 결과. `True`, `HayeonMiss`, `AccFail`, `HiddenCollapse` 등 |
+| `ReturnDay` | `D25` | 실패 루프 복귀 날짜 |
+
+## 8. 상태 변경 구조
+
+이벤트나 Shot 완료 시 상태를 변경하기 위한 공통 구조다.
+
+```cpp
+USTRUCT(BlueprintType)
+struct FVNStateChange
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EVNStateDomain Domain = EVNStateDomain::Bool;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName Key = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EVNStateOp Op = EVNStateOp::Set;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool BoolValue = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 IntValue = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName NameValue = NAME_None;
+};
+```
+
+| 필드 | 용도 |
+|---|---|
+| `Domain` | 상태가 들어 있는 영역. `Bool`, `Int`, `Name`, `Fragment`, `SeenEvent`, `Ending` |
+| `Key` | 바꿀 상태 키 |
+| `Op` | 변경 방식 |
+| `BoolValue` | bool 상태에 사용 |
+| `IntValue` | int 상태에 사용 |
+| `NameValue` | name 상태나 set 추가에 사용 |
+
+1차에서는 `Domain`으로 `BoolMap`, `IntMap`, `NameMap`, `Fragments`, `SeenEvents`, `EndingMap` 중 어디에 적용할지 명시한다. 키 접두어만 보고 타입을 추론하지 않는다.
+
+## 9. 조건 구조
+
+`UVNConditionEvaluator`와 `UVNEventSetAsset`이 함께 사용하는 조건 구조다.
+
+```cpp
+USTRUCT(BlueprintType)
+struct FVNCondition
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EVNStateDomain Domain = EVNStateDomain::Bool;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName Key = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EVNCompareOp Op = EVNCompareOp::Equal;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool BoolValue = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 IntValue = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName NameValue = NAME_None;
+};
+
+USTRUCT(BlueprintType)
+struct FVNConditionSet
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FVNCondition> All;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FVNCondition> Any;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FVNCondition> None;
+};
+```
+
+평가 규칙:
+
+1. `All`은 모두 참이어야 한다.
+2. `Any`는 비어 있으면 통과, 값이 있으면 하나 이상 참이어야 한다.
+3. `None`은 모두 거짓이어야 한다.
+4. 세 배열을 모두 통과해야 조건 통과다.
+
+예시:
+
+| 의도 | 조건 |
+|---|---|
+| 하연 신뢰 6 이상 | `Domain=Int`, `Key=HayeonTrust`, `Op=GreaterEqual`, `IntValue=6` |
+| 소하 정리 완료 | `Domain=Bool`, `Key=SohaDone`, `Op=Equal`, `BoolValue=true` |
+| 서린 단서 보유 | `Domain=Fragment`, `Key=ClueSeorin`, `Op=Exists` |
+| 회피 루프 아님 | `Domain=Int`, `Key=Avoid`, `Op=Less`, `IntValue=3` |
+
+## 10. UVNEventSetAsset
+
+`UVNEventSetAsset`은 날짜/슬롯/조건별 이벤트 목록을 담는 데이터 에셋이다.
+
+### 10.1 C++ 구조 후보
+
+```cpp
+UCLASS(BlueprintType)
+class VISUALNOVEL_API UVNEventSetAsset : public UDataAsset
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TArray<FVNEventDef> Events;
+};
+```
+
+`UVNEventHubSubsystem`은 이 에셋을 읽어 현재 상태에서 실행 가능한 이벤트를 고른다.
+
+## 11. FVNEventDef
+
+이벤트 하나의 정의다.
+
+```cpp
+USTRUCT(BlueprintType)
+struct FVNEventDef
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FName EventID = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FText DisplayName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FName DayID = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EVNDaySlot Slot = EVNDaySlot::None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 Priority = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EVNEventRunMode RunMode = EVNEventRunMode::Normal;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FVNConditionSet ShowCond;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FVNConditionSet StartCond;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FStorySceneID StartSceneID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TArray<FVNStateChange> OnStart;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TArray<FVNStateChange> OnComplete;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FName CompleteFlag = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FName NextDay = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EVNDaySlot NextSlot = EVNDaySlot::None;
+};
+```
+
+### 11.1 필드 상세
+
+| 필드 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| `EventID` | `FName` | 필수 | 이벤트 고유 ID. SceneID와 같아도 되지만 반드시 유일해야 함 |
+| `DisplayName` | `FText` | 선택 | 허브 선택지에 표시할 이름. 자동 이벤트는 비워도 됨 |
+| `DayID` | `FName` | 필수 | 실행 날짜. 예: `D1`, `DDay`, `DPlus2` |
+| `Slot` | `EVNDaySlot` | 필수 | 실행 슬롯 |
+| `Priority` | `int32` | 필수 | 높을수록 먼저 평가. 자동 이벤트 충돌 해결에 사용 |
+| `RunMode` | `EVNEventRunMode` | 필수 | 일반/자동/1회/반복/압축 재생 여부 |
+| `ShowCond` | `FVNConditionSet` | 선택 | 허브 목록에 보일 조건 |
+| `StartCond` | `FVNConditionSet` | 선택 | 실제 시작 가능 조건. ShowCond보다 엄격할 수 있음 |
+| `StartSceneID` | `FStorySceneID` | 필수 | 시작 StoryFlow SceneID |
+| `OnStart` | `TArray<FVNStateChange>` | 선택 | 이벤트 시작 즉시 적용할 상태 변경 |
+| `OnComplete` | `TArray<FVNStateChange>` | 선택 | 이벤트 완료 후 적용할 상태 변경 |
+| `CompleteFlag` | `FName` | 선택 | 완료 시 true로 켤 bool 키. `SeenEvents`와 별개 |
+| `NextDay` | `FName` | 선택 | 완료 후 날짜 이동. 비우면 유지 |
+| `NextSlot` | `EVNDaySlot` | 선택 | 완료 후 슬롯 이동. `None`이면 EventHub 기본 진행 |
+
+### 11.2 EventHub 선택 규칙
+
+`UVNEventHubSubsystem`의 기본 선택 순서다.
+
+1. `DayID == CurrentDay`인 이벤트만 고른다.
+2. `Slot == CurrentSlot` 또는 `Slot == None`인 이벤트를 고른다.
+3. `RunMode == Once`이고 `SeenEvents`에 있으면 제외한다.
+4. `ShowCond`를 통과한 이벤트만 허브 목록에 표시한다.
+5. `RunMode == Auto`인 이벤트가 있으면 우선순위가 가장 높은 1개를 바로 실행한다.
+6. 플레이어가 이벤트를 선택하면 `StartCond`를 다시 확인한다.
+7. 시작 시 `OnStart`를 적용하고 `StartSceneID`로 전환한다.
+8. 완료 시 `SeenEvents`에 `EventID`를 추가하고 `OnComplete`, `CompleteFlag`, `NextDay`, `NextSlot`을 적용한다.
+
+## 12. Miyeansi 1차 이벤트 예시
+
+### Cafe_04DayOne
+
+| 필드 | 값 |
+|---|---|
+| `EventID` | `Cafe_04DayOne` |
+| `DisplayName` | 쉬어가 카페 운영 돕기 |
+| `DayID` | `D1` |
+| `Slot` | `AfterSchool` |
+| `Priority` | 80 |
+| `RunMode` | `Once` |
+| `ShowCond` | `MetHayeon == true` |
+| `StartSceneID` | `Cafe_04DayOne` |
+| `OnComplete` | `HayeonBoothD1=true`, `HayeonTrust+1`, `HayeonPace+1` |
+| `NextSlot` | `Evening` |
+
+### DDay_00Entry
+
+| 필드 | 값 |
+|---|---|
+| `EventID` | `DDay_00Entry` |
+| `DisplayName` | 축제 마지막 날 시작 |
+| `DayID` | `DDay` |
+| `Slot` | `Morning` |
+| `Priority` | 100 |
+| `RunMode` | `Auto` |
+| `StartSceneID` | `DDay_00Entry` |
+| `NextSlot` | `AfterSchool` |
+
+### DDay_04Gate
+
+| 필드 | 값 |
+|---|---|
+| `EventID` | `DDay_04Gate` |
+| `DisplayName` | 폐장 후 최종 분기 |
+| `DayID` | `DDay` |
+| `Slot` | `Night` |
+| `Priority` | 100 |
+| `RunMode` | `Auto` |
+| `StartCond` | `DDayResult != None` |
+| `StartSceneID` | `DDay_04Gate` |
+
+### TE_00_Sat
+
+| 필드 | 값 |
+|---|---|
+| `EventID` | `TE_00_Sat` |
+| `DisplayName` | 토요일 암전 |
+| `DayID` | `DPlus1` |
+| `Slot` | `None` |
+| `Priority` | 100 |
+| `RunMode` | `Auto` |
+| `StartCond` | `TE_Unlocked == true` |
+| `StartSceneID` | `TE_00_Sat` |
+| `NextDay` | `DPlus2` |
+| `NextSlot` | `None` |
+
+## 13. 데이터 검증 규칙
+
+에디터 저장 또는 빌드 검증에서 확인할 항목이다.
+
+| 검증 | 오류 조건 |
+|---|---|
+| EventID 중복 | 같은 `UVNEventSetAsset` 안에 동일 `EventID`가 2개 이상 |
+| StartSceneID 누락 | `StartSceneID`가 비어 있음 |
+| DayID 누락 | 일반 이벤트인데 `DayID`가 비어 있음 |
+| 조건 키 공백 | `FVNCondition.Key`가 비어 있음 |
+| 상태 변경 키 공백 | `FVNStateChange.Key`가 비어 있음 |
+| 자동 이벤트 충돌 | 같은 날짜/슬롯에 `Auto`가 여러 개이고 Priority도 같음 |
+| 완료 후 이동 없음 | 허브로 돌아갈 수 없는 이벤트가 `NextSlot`/Transition을 모두 제공하지 않음 |
+| D-Day 결과 누락 | `DDay_04Gate`가 처리할 결과 SceneID가 없음 |
+
+## 14. 1차 완료 기준
+
+- `FVNStoryState`의 루트 필드와 하위 구조가 C++ USTRUCT로 바로 옮길 수 있을 만큼 확정됨.
+- `UVNEventSetAsset`이 날짜/슬롯/조건/SceneID/상태 변경을 모두 표현할 수 있음.
+- D-Day 진엔딩, 실패 루프 1종, 진엔딩 후일담 시작 이벤트를 같은 구조로 표현할 수 있음.
+- 데이터 검증 규칙으로 중복 EventID, 빈 SceneID, 자동 이벤트 충돌을 잡을 수 있음.
+- Miyeansi 전용 키는 데이터에만 있고, `VisualNovelPlugin` 코드에 하드코딩하지 않는 경계가 유지됨.
+
+## 15. 후속 작업
+
+다음 문서 작업은 `UVNDialogueShot`과 `UVNChoiceShot`의 에디터 입력 필드 확정이다.
+
+그 다음에는 `DDay_03Assess`~`DDay_05True`와 실패 루프 1종을 대상으로 최소 프로토타입 테스트 시나리오를 작성한다.

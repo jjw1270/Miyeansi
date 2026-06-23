@@ -1,4 +1,4 @@
-﻿# VisualNovelPlugin 1차 구현 범위
+# VisualNovelPlugin 1차 구현 범위
 
 이 문서는 StoryFlow 위에 얹을 재사용 가능한 미연시 전용 플러그인 `VisualNovelPlugin`의 1차 구현 범위를 확정한다.
 
@@ -25,11 +25,11 @@ StoryFlow Scene 실행
 | 영역 | StoryFlowPlugin | VisualNovelPlugin | Miyeansi 프로젝트 |
 |---|---|---|---|
 | Scene/Shot/Branch 실행 | 담당 | 사용 | 데이터 제작 |
-| 대사창, 선택지, 캐릭터 표시 | 모름 | 기본 Shot/UI 브리지 제공 | UI 스킨 적용 |
-| 날짜/슬롯/플래그 | 모름 | 범용 상태 계층 제공 | Miyeansi 상태 키 정의 |
-| 루트/히로인/엔딩 내용 | 모름 | 모름 | 담당 |
+| 대사창, 선택지, 캐릭터 표시 | 비관여 | 기본 Shot/UI 브리지 제공 | UI 스킨 적용 |
+| 날짜/슬롯/플래그 | 비관여 | 범용 상태 계층 제공 | Miyeansi 상태 키 정의 |
+| 루트/히로인/엔딩 내용 | 비관여 | 비관여 | 담당 |
 | 저장/복원 | `FStoryFlowRef` 제공 | `StoryState`와 묶어 저장 | 저장 슬롯 정책 적용 |
-| 갤러리/크레딧 연출 | 모름 | 1차 제외 | 후순위 제작 |
+| 갤러리/크레딧 연출 | 비관여 | 1차 제외 | 2차 제작 |
 
 원칙:
 
@@ -67,7 +67,7 @@ StoryFlow Scene 실행
 - name/string ID
 - tag 배열 또는 name set
 
-후순위:
+2차 범위:
 
 - 복잡한 수식 언어
 - 상태 변경 히스토리 전체 로그
@@ -109,7 +109,7 @@ StoryFlow Scene 실행
 - 선택지 목록
 - 간단한 백로그 후보
 
-후순위 UI:
+2차 UI:
 
 - 고급 텍스트 효과
 - 음성 재생 표시
@@ -131,7 +131,7 @@ D-Day 결과 평가는 별도 함수 또는 프로젝트 전용 평가 에셋으
 
 ```text
 EvaluateDDayResult()
--> True / HayeonMiss / SohaSad / SeorinSad / MiruSad / AccFail / AvoidLoop
+-> HiddenCollapse / True / HayeonMiss / SohaSad / SeorinSad / MiruSad / AccFail / AvoidLoop
 -> UVNConditionBranch가 출력 링크 선택
 ```
 
@@ -147,7 +147,7 @@ EvaluateDDayResult()
 - 이벤트 종료 후 다음 슬롯 또는 다음 날짜로 진행
 - 자동 이벤트가 있으면 선택 목록보다 우선 실행
 
-이벤트 데이터는 1차에서 `UVNEventSetAsset` 같은 DataAsset 기준을 우선한다. DataTable은 대량 입력 보조 수단으로 나중에 붙일 수 있다.
+이벤트 데이터는 1차에서 `UVNEventSetAsset` 같은 DataAsset 기준을 우선한다. DataTable은 대량 입력 보조 수단으로 추후 확장한다.
 
 이유:
 
@@ -199,7 +199,7 @@ FVNStoryState StoryState
 | 핵심 기억 조각 | 일부 유지 가능 |
 | 하루 슬롯/현재 날짜 | D-25 월요일로 복귀 |
 | 루트 진행도 | 기본 초기화 |
-| 히든 복구 조각 | 후순위 |
+| 히든 복구 조각 | 2차 범위 |
 
 ## 4. 1차 제외 범위
 
@@ -265,9 +265,12 @@ Miyeansi 전용 키는 프로젝트 데이터에서만 정의한다.
 1차 필수 키:
 
 ```text
+ComaStart
 HayeonTrust
 HayeonPace
 HayeonBoothD1
+HayeonD2
+DDayHayeon
 HayeonMutual
 SohaDone
 SeorinDone
@@ -277,8 +280,12 @@ ClueSeorin
 ClueMiru
 ClueHayeon
 Avoid
+MissPhysClue
+DDayNoHeart
+HiddenCollapse
 DDayTrueReady
 DDayTrue
+AccMemOk
 TE_Unlocked
 TE_Wake
 TE_Monday
@@ -316,9 +323,10 @@ TE_01_Wake
 
 ## 9. 후속 작업
 
-1차 범위가 확정되었으므로 다음 문서 작업은 구현 직전의 상세 데이터 설계다.
+`FVNStoryState`와 `UVNEventSetAsset` 상세 필드는 [VisualNovelPlugin 데이터 상세 설계](./VisualNovelPlugin_데이터_상세설계.md)에서 확정한다.
 
-1. `FVNStoryState` 필드 상세표 작성
-2. `UVNEventSetAsset` 데이터 필드 상세표 작성
-3. `UVNDialogueShot` / `UVNChoiceShot` 에디터 입력 필드 확정
-4. D-Day 최소 프로토타입용 테스트 시나리오 작성
+다음 문서 작업은 구현 직전 Shot 입력 필드와 최소 테스트 시나리오다.
+
+1. `UVNDialogueShot` / `UVNChoiceShot` 에디터 입력 필드 확정
+2. D-Day 최소 프로토타입용 테스트 시나리오 작성
+3. 데이터 검증 규칙을 실제 에디터 Validator 작업 목록으로 분해

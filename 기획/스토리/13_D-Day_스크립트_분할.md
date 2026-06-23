@@ -1,4 +1,4 @@
-﻿# D-Day 실제 게임 스크립트 분할
+# D-Day 실제 게임 스크립트 분할
 
 이 문서는 [D-Day 축제 마지막 날 분기](./10_D-Day_축제마지막날_분기.md)의 대본을 실제 게임 스크립트 제작 단위로 쪼갠 문서다.
 
@@ -9,7 +9,7 @@
 - D-Day를 StoryFlow Scene 또는 VN 스크립트 단위로 나눈다.
 - 각 장면의 진입 조건, 선택지, 상태 변경, 다음 장면을 명확히 한다.
 - 긴 대본 문서인 `10`을 그대로 구현하지 않고, 제작 가능한 스크립트 블록으로 변환한다.
-- 이 문서는 구현용 초안이며, 실제 엔진 스크립트 문법은 이후 StoryFlow 에셋 구조에 맞춰 조정한다.
+- 이 문서는 StoryFlow/VN 제작 기준이며, 실제 엔진 입력 필드는 시스템 문서의 VisualNovelPlugin 설계를 따른다.
 
 배경 원화와 AI 이미지 생성 기준은 [장소와 배경 묘사](./14_장소와_배경_묘사.md)를 따른다. 이 문서의 `@bg` 아래 배경 지시는 실제 제작자가 어떤 변형 배경을 호출해야 하는지 빠르게 확인하기 위한 요약이다.
 
@@ -31,7 +31,7 @@
 
 | 표기 | 의미 |
 | --- | --- |
-| `# SceneID` | 장면 고유 ID 후보 |
+| `# SceneID` | 장면 고유 ID |
 | `@enter` | 진입 조건 |
 | `@bg` | 배경/장소 |
 | `@music` | 음악 방향 |
@@ -73,9 +73,8 @@ DDay_04Gate
 ```text
 # DDay_00Entry
 @enter Date == DDay
-@enter D1CafeOperated == true
-@enter D2PremonitionSeen == true
-@enter D3RelationshipAssessmentDone == true
+@enter HayeonBoothD1 == true
+@enter HayeonD2 == true
 @bg 2학년 5반 쉬어가 카페 / 축제 마지막 날 오전
 @music festival_day_light_low
 ```
@@ -214,10 +213,10 @@ D-2 성공 시 추가:
 @if HayeonTrust >= 5 || HayeonPace >= 2
   @flag HayeonTrust += 1
   @flag HayeonPace += 1
-  @flag DDayHayeonDaySuccess = true
+  @flag DDayHayeon = true
 @endif
 
-@if D2Passed == true && DDayHayeonDaySuccess == true
+@if HayeonD2 == true && DDayHayeon == true
   @flag ClueHayeon = true
 @endif
 
@@ -230,7 +229,7 @@ D-2 성공 시 추가:
 
 ```text
 @if HayeonTrust <= 4 && HayeonPace <= 1
-  @flag DDayHayeonDaySuccess = false
+  @flag DDayHayeon = false
 @endif
 ```
 
@@ -578,7 +577,9 @@ D-3 미정리 보정 선택:
 라우팅:
 
 ```text
-@if DDayResult == True
+@if DDayResult == HiddenCollapse
+  @goto DDay_12HiddenCollapse
+@elseif DDayResult == True
   @goto DDay_05True
 @elseif DDayResult == HayeonMiss
   @goto DDay_06HayeonMiss
@@ -647,7 +648,7 @@ D-3 미정리 보정 선택:
 @if MiruDone == true
   @insert "누군가에게 필요한 사람인 척하면서 내 마음을 미루지 않으려고 왔어."
 @endif
-@if D2Passed == true
+@if HayeonD2 == true
   @insert "네가 조용한 데서 숨을 고르는 사람이라는 걸, 이제는 조금 알아."
 @endif
 ```
@@ -1012,16 +1013,72 @@ D-3 미정리 보정 선택:
 @end LoopToD25
 ```
 
-## 20. 평가 함수 초안
+## 20. 히든 붕괴 루프
+
+### DDay_12HiddenCollapse
+
+```text
+# DDay_12HiddenCollapse
+@enter DDayResult == HiddenCollapse
+@bg 월요일 교실과 축제 마지막 밤이 뒤섞인 복도
+@music hidden_collapse_noise
+@sfx distant_festival_bell, broken_school_chime
+```
+
+배경 지시:
+
+- 월요일 아침 교실, 축제 폐장 후 복도, 소무대 조명이 한 화면에 겹친다.
+- 시간 붕괴를 설명 대사로 풀지 말고, 서로 맞지 않는 배경음과 조명으로 먼저 느끼게 한다.
+- 공포 연출보다 `선택을 회피한 기억이 구조 자체를 망가뜨린다`는 불안감에 집중한다.
+
+목적:
+
+- 반복을 악용하거나 핵심 선택을 계속 피한 경우 정상 루프로 돌아가지 못하는 예외 실패다.
+- 진엔딩/새드엔딩이 아니라, 플레이 구조가 무너지는 히든 실패로 취급한다.
+
+스크립트:
+
+```text
+종소리가 울렸다.
+
+분명 월요일 아침이어야 했다.
+
+하지만 복도 끝에는 축제 조명이 아직 꺼지지 않은 채 매달려 있었고,
+교실 칠판에는 폐장 안내 문구가 분필가루처럼 번져 있었다.
+
+재윤은 책상 위에 놓인 자기 손을 내려다보았다.
+어제의 손인지,
+스물다섯 번째 날의 손인지,
+깨어난 뒤의 손인지 알 수 없었다.
+
+멀리서 하연의 목소리 같은 것이 들렸다.
+
+이번에도,
+말하지 않을 거야?
+
+대답하려는 순간,
+문장이 먼저 지워졌다.
+```
+
+상태 처리:
+
+```text
+@flag HiddenCollapse = true
+@flag LoopCount += 1
+@flag ReturnDate = D25
+@end BrokenLoop
+```
+
+## 21. 평가 함수 기준
 
 실제 구현 시 사용할 평가 함수 의사코드다.
 
 ```text
 function EvaluateDDayResult():
-    if HiddenCollapseCondition == true:
+    if HiddenCollapse == true:
         return HiddenCollapse
 
-    if D2Passed == false:
+    if HayeonD2 == false:
         return HayeonMiss
 
     if HayeonTrust < 6 or HayeonPace < 3:
@@ -1037,7 +1094,7 @@ function EvaluateDDayResult():
         return MiruSad
 
     if SohaDone == false or SeorinDone == false or MiruDone == false:
-        return RelationshipUnresolvedLoop
+        return HayeonMiss
 
     if ClueScore < 3 or ClueHayeon == false:
         return AccFail
@@ -1048,9 +1105,9 @@ function EvaluateDDayResult():
     return True
 ```
 
-## 21. 실제 제작 시 분리 권장 에셋
+## 22. 실제 제작 시 분리 권장 에셋
 
-| 에셋 후보 | 포함 Scene |
+| 에셋 | 포함 Scene |
 | --- | --- |
 | `SF_DDay` | `DDay_00Entry`, `DDay_01Choice`, `DDay_03Assess`, `DDay_04Gate` |
 | `SF_DDayHayeon` | `DDay_02Hayeon` |
@@ -1060,9 +1117,10 @@ function EvaluateDDayResult():
 | `SF_DDayAlone` | `DDay_02Alone` |
 | `SF_DDayTrue` | `DDay_05True` |
 | `SF_DDayFail` | `DDay_06HayeonMiss`, `DDay_10AccFail`, `DDay_11Avoid` |
+| `SF_DDayHidden` | `DDay_12HiddenCollapse` |
 | `SF_DDaySad` | `DDay_07SohaSad`, `DDay_08SeorinSad`, `DDay_09MiruSad` |
 
-## 22. 다음 연결
+## 23. 다음 연결
 
 이 문서 이후 우선 작업은 두 갈래다.
 

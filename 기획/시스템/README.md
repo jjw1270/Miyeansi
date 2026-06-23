@@ -4,18 +4,21 @@
 
 - [미연시 코어 시스템 요구사항](./미연시_코어_시스템_요구사항.md)
 - [VisualNovelPlugin 1차 구현 범위](./VisualNovelPlugin_1차_구현범위.md)
+- [VisualNovelPlugin 데이터 상세 설계](./VisualNovelPlugin_데이터_상세설계.md)
 - [하루 행동 시스템](./하루_행동_시스템.md)
 
 ## 현재 초점
 
 스토리 기획을 실제 게임 구조로 옮기기 위해 날짜, 행동 슬롯, 병렬 이벤트, 조건 분기, 루프/엔딩 상태를 정리한다.
 
-현재 판단은 StoryFlow 코어를 미연시 전용으로 크게 바꾸지 않고, 별도 `VisualNovelPlugin`을 만들어 StoryFlow 위에 `StoryState`, 이벤트 허브, VN용 Shot/Branch 템플릿을 얹는 방향이다. 1차 구현 범위는 `VisualNovelPlugin_1차_구현범위.md`를 따른다.
+현재 판단은 StoryFlow 코어를 미연시 전용으로 크게 바꾸지 않고, 별도 `VisualNovelPlugin`을 만들어 StoryFlow 위에 `StoryState`, 이벤트 허브, VN용 Shot/Branch 템플릿을 얹는 방향이다. 1차 구현 범위는 `VisualNovelPlugin_1차_구현범위.md`, 상태/이벤트 데이터 상세는 `VisualNovelPlugin_데이터_상세설계.md`를 따른다.
 
 역할 분리:
 
 - `StoryFlowPlugin`: 범용 Scene/Shot/Branch 실행, `FStoryFlowRef`, Scene Registry
 - `VisualNovelPlugin`: 날짜/슬롯/플래그, 캐릭터 진행도, 기억 조각, 엔딩 기록, VN 대사/선택지 Shot
+- 게임 제목: 너에게 닿는 마지막 여름
+- 내부 프로젝트명: Miyeansi
 - 게임 프로젝트: Miyeansi 전용 캐릭터/루트/이벤트 데이터와 UI 스킨
 
 ## 정본 기준

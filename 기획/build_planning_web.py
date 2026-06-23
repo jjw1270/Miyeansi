@@ -221,7 +221,7 @@ def build_html(docs: list[dict]) -> str:
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Miyeansi 통합 기획서</title>
+  <title>너에게 닿는 마지막 여름 통합 기획서</title>
   <style>
     :root {
       --bg:#f4f7fb;
@@ -528,7 +528,7 @@ def build_html(docs: list[dict]) -> str:
     <div class="brand">
       <div class="logo" aria-hidden="true"></div>
       <div>
-        <h1>Miyeansi 통합 기획서</h1>
+        <h1>너에게 닿는 마지막 여름 통합 기획서</h1>
         <p>문서 라이브러리에서 하나씩 골라 읽는 웹형 기획서</p>
       </div>
     </div>
