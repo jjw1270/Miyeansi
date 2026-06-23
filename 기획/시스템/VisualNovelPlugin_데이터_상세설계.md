@@ -497,11 +497,283 @@ public:
 | 서린 단서 보유 | `Domain=Fragment`, `Key=ClueSeorin`, `Op=Exists` |
 | 회피 루프 아님 | `Domain=Int`, `Key=Avoid`, `Op=Less`, `IntValue=3` |
 
-## 10. UVNEventSetAsset
+## 10. VN Shot 입력 필드
+
+1차 구현에서는 `UVNDialogueShot`과 `UVNChoiceShot`만 확정한다. `UVNFlagShot`은 별도 클래스로 늘리지 않고, 두 Shot의 `OnEnter` / `OnComplete` / `OnSelect` 상태 변경으로 흡수한다.
+
+중요한 연결 규칙:
+
+- `UVNDialogueShot`은 StoryFlow의 기본 Shot처럼 단일 `Next` 핀으로 진행한다.
+- `UVNChoiceShot`도 1차에서는 단일 `Next` 핀만 사용한다.
+- 선택지별로 바로 다른 Scene에 점프하지 않는다.
+- 선택 결과는 `NameMap`이나 `BoolMap`에 저장하고, 다음 노드의 `UVNConditionBranch`가 분기를 고른다.
+- 선택지별 직접 출력 핀은 에디터 커스텀 노드가 필요하므로 1차 범위에서 제외한다.
+
+이 규칙을 지키면 StoryFlow 코어를 바꾸지 않고도 선택지 분기를 만들 수 있다.
+
+### 10.1 공통 입력 원칙
+
+| 구분 | 원칙 |
+|---|---|
+| UPROPERTY 필드명 | 짧은 PascalCase |
+| 런타임 내부 멤버 | 기존 코드처럼 `_` + PascalCase |
+| 캐릭터/배경/BGM/SFX 참조 | 1차는 `FName` ID 사용. 실제 에셋 로딩은 프로젝트 UI/리소스 레이어에서 해석 |
+| 상태 변경 | `FVNStateChange` 배열 재사용 |
+| 조건 | `FVNConditionSet` 재사용 |
+| 긴 문장 | `FText`, `meta=(MultiLine=true)` |
+| 분기 | ChoiceShot 직접 점프가 아니라 `UVNConditionBranch`에서 처리 |
+
+### 10.2 EVNDialogueLineKind
+
+```cpp
+UENUM(BlueprintType)
+enum class EVNDialogueLineKind : uint8
+{
+	Dialogue,
+	Narration,
+	Monologue,
+	System,
+};
+```
+
+| 값 | 용도 |
+|---|---|
+| `Dialogue` | 캐릭터 이름이 표시되는 일반 대사 |
+| `Narration` | 이름 없이 출력되는 지문/내레이션 |
+| `Monologue` | 재윤의 독백 |
+| `System` | 날짜 전환, 짧은 안내, 디버그용 시스템 문구 |
+
+### 10.3 FVNCharacterCue
+
+한 줄의 대사 동안 화면에 표시할 캐릭터 상태다.
+
+```cpp
+USTRUCT(BlueprintType)
+struct FVNCharacterCue
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName CharacterID = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName SpriteID = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName PoseID = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName PositionID = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bFocus = false;
+};
+```
+
+| 필드 | 필수 | 설명 |
+|---|---|---|
+| `CharacterID` | 필수 | `Hayeon`, `Soha`, `Seorin`, `Miru`, `Jaeyoon` 등 |
+| `SpriteID` | 선택 | 캐릭터 기본 스프라이트 ID |
+| `PoseID` | 선택 | 표정/포즈 ID. 예: `Calm`, `Smile`, `Uneasy` |
+| `PositionID` | 선택 | 화면 위치. 예: `Left`, `Center`, `Right` |
+| `bFocus` | 선택 | 대사 화자 강조 여부 |
+
+### 10.4 FVNDialogueLine
+
+`UVNDialogueShot` 안에 들어가는 실제 대사 한 줄이다. 한 Shot에 여러 줄을 담아 그래프 노드 수를 줄인다.
+
+```cpp
+USTRUCT(BlueprintType)
+struct FVNDialogueLine
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EVNDialogueLineKind Kind = EVNDialogueLineKind::Dialogue;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName SpeakerID = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FText SpeakerName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(MultiLine=true))
+	FText Text;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName BackgroundID = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName BgmID = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName SfxID = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FVNCharacterCue> Characters;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FVNStateChange> OnShow;
+};
+```
+
+| 필드 | 필수 | 설명 |
+|---|---|---|
+| `Kind` | 필수 | 대사/내레이션/독백/시스템 문구 구분 |
+| `SpeakerID` | 조건부 | 일반 대사면 권장. 내레이션은 비워도 됨 |
+| `SpeakerName` | 선택 | 표시 이름을 직접 덮어쓸 때 사용. 비우면 `SpeakerID`를 UI에서 해석 |
+| `Text` | 필수 | 실제 출력 문장 |
+| `BackgroundID` | 선택 | 이 줄에서 바꿀 배경. 비우면 유지 |
+| `BgmID` | 선택 | 이 줄에서 바꿀 BGM. 비우면 유지 |
+| `SfxID` | 선택 | 이 줄에서 재생할 효과음 |
+| `Characters` | 선택 | 화면에 표시할 캐릭터 큐 |
+| `OnShow` | 선택 | 이 줄이 표시되는 순간 적용할 상태 변경 |
+
+### 10.5 UVNDialogueShot
+
+```cpp
+UCLASS(BlueprintType, EditInlineNew)
+class VISUALNOVEL_API UVNDialogueShot : public UStoryShotBase
+{
+	GENERATED_BODY()
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
+	TArray<FVNDialogueLine> Lines;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
+	TArray<FVNStateChange> OnEnter;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
+	TArray<FVNStateChange> OnComplete;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
+	bool bWaitForInput = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
+	bool bAddToBacklog = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
+	float AutoAdvanceDelay = 0.0f;
+};
+```
+
+| 필드 | 기본값 | 설명 |
+|---|---|---|
+| `Lines` | empty | 출력할 대사 줄 목록. 최소 1개 필요 |
+| `OnEnter` | empty | Shot 시작 시 1회 적용할 상태 변경 |
+| `OnComplete` | empty | 모든 줄을 넘긴 뒤 적용할 상태 변경 |
+| `bWaitForInput` | true | true면 플레이어 입력으로 다음 줄 진행 |
+| `bAddToBacklog` | true | true면 대사 로그에 기록 |
+| `AutoAdvanceDelay` | 0.0 | 0보다 크면 입력 없이 지정 시간 뒤 진행. 암전/짧은 연출에 사용 |
+
+### 10.6 FVNChoiceOption
+
+```cpp
+USTRUCT(BlueprintType)
+struct FVNChoiceOption
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName ChoiceID = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FText Text;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVNConditionSet ShowCond;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVNConditionSet EnableCond;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FText DisabledText;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FVNStateChange> OnSelect;
+};
+```
+
+| 필드 | 필수 | 설명 |
+|---|---|---|
+| `ChoiceID` | 필수 | 선택 결과 ID. 예: `Hayeon`, `Soha`, `Alone`, `Stay`, `Avoid` |
+| `Text` | 필수 | 플레이어에게 보이는 선택지 문구 |
+| `ShowCond` | 선택 | 선택지가 목록에 보일 조건 |
+| `EnableCond` | 선택 | 선택 가능 조건. 실패하면 비활성 표시 |
+| `DisabledText` | 선택 | 비활성 이유 문구 |
+| `OnSelect` | 선택 | 선택 직후 적용할 상태 변경 |
+
+### 10.7 UVNChoiceShot
+
+```cpp
+UCLASS(BlueprintType, EditInlineNew)
+class VISUALNOVEL_API UVNChoiceShot : public UStoryShotBase
+{
+	GENERATED_BODY()
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
+	FText PromptText;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
+	FName ResultKey = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
+	TArray<FVNChoiceOption> Options;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
+	TArray<FVNStateChange> OnEnter;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
+	TArray<FVNStateChange> OnComplete;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
+	bool bAutoSelectSingleOption = false;
+};
+```
+
+| 필드 | 기본값 | 설명 |
+|---|---|---|
+| `PromptText` | empty | 선택지 위에 표시할 질문/상황 문구 |
+| `ResultKey` | None | 선택한 `ChoiceID`를 `NameMap`에 저장할 키. 예: `DDayChoice` |
+| `Options` | empty | 선택지 목록. 최소 1개 필요 |
+| `OnEnter` | empty | 선택지 표시 전에 적용할 상태 변경 |
+| `OnComplete` | empty | 선택 완료 뒤 공통 적용할 상태 변경 |
+| `bAutoSelectSingleOption` | false | 표시 가능한 선택지가 1개뿐일 때 자동 선택할지 여부 |
+
+선택 처리 순서:
+
+1. `OnEnter`를 적용한다.
+2. `ShowCond`를 통과한 선택지만 목록에 만든다.
+3. `EnableCond`를 통과하지 못한 선택지는 비활성으로 보여준다.
+4. 플레이어가 선택하면 `ResultKey`가 비어 있지 않은 경우 `NameMap[ResultKey] = ChoiceID`를 저장한다.
+5. 선택지의 `OnSelect`를 적용한다.
+6. Shot의 `OnComplete`를 적용한다.
+7. StoryFlow 기본 `Next` 핀으로 진행한다.
+
+예시:
+
+| 필드 | 값 |
+|---|---|
+| `PromptText` | 오늘 축제를 누구와 둘러볼까? |
+| `ResultKey` | `DDayChoice` |
+| `Options[0].ChoiceID` | `Hayeon` |
+| `Options[0].Text` | 하연을 찾는다 |
+| `Options[0].ShowCond` | `HayeonBoothD1 == true` |
+| `Options[0].OnSelect` | `DDayHayeon = true`, `HayeonTrust += 1` |
+| `Options[1].ChoiceID` | `Alone` |
+| `Options[1].Text` | 혼자 소무대를 확인한다 |
+| 다음 노드 | `UVNConditionBranch` 또는 `DDay_03Assess` |
+
+## 11. UVNEventSetAsset
 
 `UVNEventSetAsset`은 날짜/슬롯/조건별 이벤트 목록을 담는 데이터 에셋이다.
 
-### 10.1 C++ 구조 후보
+### 11.1 C++ 구조 후보
 
 ```cpp
 UCLASS(BlueprintType)
@@ -517,7 +789,7 @@ public:
 
 `UVNEventHubSubsystem`은 이 에셋을 읽어 현재 상태에서 실행 가능한 이벤트를 고른다.
 
-## 11. FVNEventDef
+## 12. FVNEventDef
 
 이벤트 하나의 정의다.
 
@@ -572,7 +844,7 @@ public:
 };
 ```
 
-### 11.1 필드 상세
+### 12.1 필드 상세
 
 | 필드 | 타입 | 필수 | 설명 |
 |---|---|---|---|
@@ -591,7 +863,7 @@ public:
 | `NextDay` | `FName` | 선택 | 완료 후 날짜 이동. 비우면 유지 |
 | `NextSlot` | `EVNDaySlot` | 선택 | 완료 후 슬롯 이동. `None`이면 EventHub 기본 진행 |
 
-### 11.2 EventHub 선택 규칙
+### 12.2 EventHub 선택 규칙
 
 `UVNEventHubSubsystem`의 기본 선택 순서다.
 
@@ -604,7 +876,7 @@ public:
 7. 시작 시 `OnStart`를 적용하고 `StartSceneID`로 전환한다.
 8. 완료 시 `SeenEvents`에 `EventID`를 추가하고 `OnComplete`, `CompleteFlag`, `NextDay`, `NextSlot`을 적용한다.
 
-## 12. Miyeansi 1차 이벤트 예시
+## 13. Miyeansi 1차 이벤트 예시
 
 ### Cafe_04DayOne
 
@@ -662,7 +934,7 @@ public:
 | `NextDay` | `DPlus2` |
 | `NextSlot` | `None` |
 
-## 13. 데이터 검증 규칙
+## 14. 데이터 검증 규칙
 
 에디터 저장 또는 빌드 검증에서 확인할 항목이다.
 
@@ -673,20 +945,25 @@ public:
 | DayID 누락 | 일반 이벤트인데 `DayID`가 비어 있음 |
 | 조건 키 공백 | `FVNCondition.Key`가 비어 있음 |
 | 상태 변경 키 공백 | `FVNStateChange.Key`가 비어 있음 |
+| DialogueShot 빈 줄 | `UVNDialogueShot.Lines`가 비어 있거나, `Text`와 연출/상태 변경이 모두 비어 있는 줄이 있음 |
+| ChoiceShot 선택지 없음 | `UVNChoiceShot.Options`가 비어 있거나 `ShowCond` 통과 후 표시 가능한 선택지가 없음 |
+| ChoiceID 중복 | 같은 `UVNChoiceShot` 안에 동일 `ChoiceID`가 2개 이상 |
+| Choice 결과 키 누락 | 선택 결과로 분기해야 하는 `UVNChoiceShot`인데 `ResultKey`가 비어 있음 |
 | 자동 이벤트 충돌 | 같은 날짜/슬롯에 `Auto`가 여러 개이고 Priority도 같음 |
 | 완료 후 이동 없음 | 허브로 돌아갈 수 없는 이벤트가 `NextSlot`/Transition을 모두 제공하지 않음 |
 | D-Day 결과 누락 | `DDay_04Gate`가 처리할 결과 SceneID가 없음 |
 
-## 14. 1차 완료 기준
+## 15. 1차 완료 기준
 
 - `FVNStoryState`의 루트 필드와 하위 구조가 C++ USTRUCT로 바로 옮길 수 있을 만큼 확정됨.
+- `UVNDialogueShot` / `UVNChoiceShot` 입력 필드가 StoryFlow 기본 Shot/Branch 구조를 바꾸지 않는 범위에서 확정됨.
 - `UVNEventSetAsset`이 날짜/슬롯/조건/SceneID/상태 변경을 모두 표현할 수 있음.
 - D-Day 진엔딩, 실패 루프 1종, 진엔딩 후일담 시작 이벤트를 같은 구조로 표현할 수 있음.
 - 데이터 검증 규칙으로 중복 EventID, 빈 SceneID, 자동 이벤트 충돌을 잡을 수 있음.
 - Miyeansi 전용 키는 데이터에만 있고, `VisualNovelPlugin` 코드에 하드코딩하지 않는 경계가 유지됨.
 
-## 15. 후속 작업
+## 16. 후속 작업
 
-다음 문서 작업은 `UVNDialogueShot`과 `UVNChoiceShot`의 에디터 입력 필드 확정이다.
+`DDay_03Assess`~`DDay_05True`와 실패 루프 검증 기준은 [D-Day 최소 프로토타입 테스트 시나리오](./D-Day_최소_프로토타입_테스트_시나리오.md)에 정리했다.
 
-그 다음에는 `DDay_03Assess`~`DDay_05True`와 실패 루프 1종을 대상으로 최소 프로토타입 테스트 시나리오를 작성한다.
+다음 작업은 이 데이터 구조를 실제 `VisualNovelPlugin` 코드와 에디터 Validator로 옮기는 것이다.

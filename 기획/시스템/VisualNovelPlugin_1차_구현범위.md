@@ -92,12 +92,21 @@ StoryFlow Scene 실행
 
 ### 3.3 VN용 Shot
 
-| 클래스 후보 | 1차 역할 | 비고 |
+| 클래스 | 1차 역할 | 비고 |
 |---|---|---|
-| `UVNDialogueShot` | 대사, 나레이션, 캐릭터 스프라이트, 배경, BGM/SFX, 간단한 상태 변경 | 가장 먼저 필요 |
-| `UVNChoiceShot` | 선택지 표시, 선택 가능 조건, 선택 결과 상태 변경, 다음 링크 전달 | 인게임 선택 담당 |
+| `UVNDialogueShot` | 대사, 나레이션, 캐릭터 스프라이트, 배경, BGM/SFX, 간단한 상태 변경 | 입력 필드 확정 |
+| `UVNChoiceShot` | 선택지 표시, 선택 가능 조건, 선택 결과 상태 변경, 선택 결과 저장 | 입력 필드 확정 |
 | `UVNFlagShot` | 대사 없이 상태만 변경하는 짧은 처리 Shot | 필요하면 DialogueShot의 옵션으로 흡수 가능 |
 | `UVNWaitShot` | 짧은 대기, 암전, 전환 타이밍 | 프롤로그/진엔딩 후일담에 필요 |
+
+입력 필드 기준은 [VisualNovelPlugin 데이터 상세 설계](./VisualNovelPlugin_데이터_상세설계.md)의 `VN Shot 입력 필드` 섹션을 따른다.
+
+1차 선택지 분기 원칙:
+
+- `UVNChoiceShot`은 StoryFlow 기본 Shot의 단일 `Next` 핀으로만 진행한다.
+- 선택지별 직접 Scene 점프는 하지 않는다.
+- 선택한 `ChoiceID`를 `ResultKey`로 `NameMap`에 저장하고, 다음 `UVNConditionBranch`가 실제 분기를 고른다.
+- 선택지별 출력 핀을 가진 커스텀 그래프 노드는 2차 범위로 둔다.
 
 1차 UI는 완성형 연출보다 기능 확인을 우선한다.
 
@@ -325,8 +334,13 @@ TE_01_Wake
 
 `FVNStoryState`와 `UVNEventSetAsset` 상세 필드는 [VisualNovelPlugin 데이터 상세 설계](./VisualNovelPlugin_데이터_상세설계.md)에서 확정한다.
 
-다음 문서 작업은 구현 직전 Shot 입력 필드와 최소 테스트 시나리오다.
+구현 직전 Shot 입력 필드는 [VisualNovelPlugin 데이터 상세 설계](./VisualNovelPlugin_데이터_상세설계.md)에 확정했다.
 
-1. `UVNDialogueShot` / `UVNChoiceShot` 에디터 입력 필드 확정
-2. D-Day 최소 프로토타입용 테스트 시나리오 작성
-3. 데이터 검증 규칙을 실제 에디터 Validator 작업 목록으로 분해
+구현 착수 전 기준 문서는 [D-Day 최소 프로토타입 테스트 시나리오](./D-Day_최소_프로토타입_테스트_시나리오.md)까지 준비되었다.
+
+다음 작업은 1차 구현 착수와 에디터 Validator 작업 목록 분해다.
+
+1. `VisualNovelPlugin` 모듈 생성과 StoryFlow 의존성 연결
+2. `FVNStoryState`, `FVNStateChange`, `FVNConditionSet` 구현
+3. `UVNDialogueShot`, `UVNChoiceShot`, `UVNConditionBranch` 구현
+4. 데이터 검증 규칙을 실제 에디터 Validator 작업 목록으로 분해
