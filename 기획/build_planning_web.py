@@ -20,6 +20,16 @@ CATEGORY_ORDER = {
     '시스템': 2,
 }
 
+STATUS_BADGES = {
+    '대기': 'todo',
+    '진행중': 'doing',
+    '검증중': 'review',
+    '완료': 'done',
+    '보류': 'hold',
+}
+
+STATUS_OPTIONS = list(STATUS_BADGES)
+
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding='utf-8-sig')
@@ -48,11 +58,38 @@ def slugify(value: str, fallback: str) -> str:
 
 
 def inline_md(text: str) -> str:
+    task = re.match(r'^\[( |x|X)\]\s*(.*)$', text)
+    if task:
+        checked = ' checked' if task.group(1).lower() == 'x' else ''
+        return f'<input class="task-checkbox" type="checkbox" disabled{checked}> {inline_md(task.group(2))}'
     text = html.escape(text)
     text = re.sub(r'`([^`]+)`', r'<code>\1</code>', text)
     text = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', text)
     text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2">\1</a>', text)
     return text
+
+
+def is_status_table(header: list[str]) -> bool:
+    if '상태' not in header:
+        return False
+    if header == ['상태', '의미'] or header == ['항목', '상태']:
+        return False
+    return any(cell in header for cell in ('목표', '작업', '테스트', '우선순위'))
+
+
+def render_status_select(status: str) -> str:
+    status = status.strip()
+    if status not in STATUS_BADGES:
+        return inline_md(status)
+    status_class = STATUS_BADGES[status]
+    options = ''.join(
+        f'<option value="{html.escape(option)}"{" selected" if option == status else ""}>{html.escape(option)}</option>'
+        for option in STATUS_OPTIONS
+    )
+    return (
+        f'<select class="status-select status-{status_class}" '
+        f'data-default-status="{html.escape(status)}" aria-label="상태 선택">{options}</select>'
+    )
 
 
 def render_table(lines: list[str]) -> str:
@@ -64,6 +101,7 @@ def render_table(lines: list[str]) -> str:
         return ''.join(f'<p>{inline_md(line)}</p>' for line in lines)
     header = rows[0]
     body = rows[2:] if re.match(r'^\s*:?-{3,}:?\s*$', rows[1][0] if rows[1] else '') else rows[1:]
+    status_index = header.index('상태') if is_status_table(header) else -1
     out = ['<div class="table-wrap"><table><thead><tr>']
     out.extend(f'<th>{inline_md(cell)}</th>' for cell in header)
     out.append('</tr></thead><tbody>')
@@ -71,7 +109,9 @@ def render_table(lines: list[str]) -> str:
         out.append('<tr>')
         width = max(len(header), len(row))
         for i in range(width):
-            out.append(f'<td>{inline_md(row[i]) if i < len(row) else ""}</td>')
+            cell = row[i] if i < len(row) else ''
+            rendered_cell = render_status_select(cell) if i == status_index else inline_md(cell)
+            out.append(f'<td>{rendered_cell}</td>')
         out.append('</tr>')
     out.append('</tbody></table></div>')
     return ''.join(out)
@@ -215,6 +255,7 @@ def build_html(docs: list[dict]) -> str:
         })
 
     data_json = json.dumps(payload, ensure_ascii=False).replace('</', '<\\/')
+    status_classes_json = json.dumps(STATUS_BADGES, ensure_ascii=False).replace('</', '<\\/')
 
     html_text = r'''<!doctype html>
 <html lang="ko">
@@ -436,6 +477,32 @@ def build_html(docs: list[dict]) -> str:
     .doc-body p { margin:11px 0; }
     .doc-body ul, .doc-body ol { padding-left:1.35rem; }
     .doc-body li { margin:5px 0; }
+    .doc-body .task-checkbox {
+      width:1.05em;
+      height:1.05em;
+      margin:0 .45em 0 0;
+      vertical-align:-.16em;
+      accent-color:var(--accent);
+    }
+    .doc-body .status-select {
+      min-width:6.4em;
+      border-radius:999px;
+      padding:5px 30px 5px 11px;
+      font-size:12px;
+      font-weight:800;
+      line-height:1.35;
+      white-space:nowrap;
+      border:1px solid transparent;
+      cursor:pointer;
+      appearance:auto;
+      outline:none;
+    }
+    .doc-body .status-select:focus-visible { box-shadow:0 0 0 3px rgba(79,70,229,.18); }
+    .status-todo { color:#475467; background:#f2f4f7; border-color:#d0d5dd; }
+    .status-doing { color:#1d4ed8; background:#eff6ff; border-color:#bfdbfe; }
+    .status-review { color:#6d28d9; background:#f5f3ff; border-color:#ddd6fe; }
+    .status-done { color:#047857; background:#ecfdf3; border-color:#a7f3d0; }
+    .status-hold { color:#b45309; background:#fffbeb; border-color:#fde68a; }
     .doc-body code { background:#eef2ff; color:#3730a3; border:1px solid #dfe3ff; border-radius:6px; padding:1px 5px; }
     .doc-body pre { background:#111827; color:#e5e7eb; border-radius:16px; padding:16px; overflow:auto; max-width:100%; -webkit-overflow-scrolling:touch; box-shadow:inset 0 0 0 1px rgba(255,255,255,.08); }
     .doc-body pre code { background:transparent; color:inherit; border:0; padding:0; }
@@ -638,6 +705,9 @@ def build_html(docs: list[dict]) -> str:
     const search = document.getElementById('search');
     const buttons = [...document.querySelectorAll('[data-filter]')];
     const library = document.getElementById('library');
+    const STATUS_CLASSES = __STATUS_CLASSES__;
+    const STATUS_OPTIONS = Object.keys(STATUS_CLASSES);
+    const STATUS_STORAGE_PREFIX = 'miyeansi:planning-status:';
     let filter = 'all';
     let currentId = null;
 
@@ -645,6 +715,15 @@ def build_html(docs: list[dict]) -> str:
       acc[doc.category] = (acc[doc.category] || 0) + 1;
       return acc;
     }, {});
+    const quickStarts = [
+      { label:'개발 일정 보기', title:'개발 일정', desc:'현재 구현 단계, 1차 마일스톤, 드롭다운 상태와 관련 기획서 링크를 확인합니다.' },
+      { label:'전체 스토리 보기', title:'전체 스토리', desc:'첫 월요일부터 진엔딩 후 방학식까지 확정된 본편 흐름을 소설형으로 읽습니다.' },
+      { label:'실패 외전 보기', title:'전체 스토리 외전: 실패 루프와 새드엔딩', desc:'하연 실패 루프와 새드엔딩을 짧고 선명한 외전 장면으로 확인합니다.' },
+      { label:'날짜 흐름 보기', title:'날짜별 진행 달력', desc:'D-32부터 축제 마지막 날, D+3 방학식까지의 전체 진행을 확인합니다.' },
+      { label:'핵심 시스템 보기', title:'미연시 코어 시스템 요구사항', desc:'날짜, 회차, 플래그, 조건, 엔딩 기록 같은 런타임 상태를 확인합니다.' },
+      { label:'하루 행동 보기', title:'하루 행동 시스템 기획', desc:'평일/주말 슬롯과 선택 행동 구조를 확인합니다.' },
+      { label:'캐릭터 관계 보기', title:'캐릭터와 관계', desc:'재윤, 하연, 소하, 서린, 미루의 관계 축을 확인합니다.' },
+    ];
 
     function norm(value) { return (value || '').toLowerCase().trim(); }
     function getFilteredDocs() {
@@ -811,6 +890,52 @@ def build_html(docs: list[dict]) -> str:
         link.title = `통합 기획서에서 ${target.doc.title} 열기`;
       });
     }
+    function statusSelectLabel(select) {
+      const row = select.closest('tr');
+      if (!row) return select.dataset.defaultStatus || '';
+      const statusCell = select.closest('td');
+      const labels = [...row.children]
+        .filter(cell => cell !== statusCell)
+        .map(cell => cell.textContent.replace(/\s+/g, ' ').trim())
+        .filter(Boolean);
+      return labels.slice(0, 2).join('|').slice(0, 120);
+    }
+    function statusStorageKey(doc, select, index) {
+      return STATUS_STORAGE_PREFIX + doc.path + ':' + index + ':' + statusSelectLabel(select);
+    }
+    function setStatusSelectClass(select, status) {
+      Object.values(STATUS_CLASSES).forEach(name => select.classList.remove('status-' + name));
+      select.classList.add('status-' + (STATUS_CLASSES[status] || 'todo'));
+    }
+    function readStatusValue(key, defaultStatus) {
+      try {
+        const saved = localStorage.getItem(key);
+        return STATUS_OPTIONS.includes(saved) ? saved : defaultStatus;
+      } catch (error) {
+        console.warn('상태 값을 읽지 못했습니다.', error);
+        return defaultStatus;
+      }
+    }
+    function writeStatusValue(key, status) {
+      try {
+        localStorage.setItem(key, status);
+      } catch (error) {
+        console.warn('상태 값을 저장하지 못했습니다.', error);
+      }
+    }
+    function bindStatusSelects(doc) {
+      content.querySelectorAll('.doc-body .status-select').forEach((select, index) => {
+        const key = statusStorageKey(doc, select, index);
+        const status = readStatusValue(key, select.dataset.defaultStatus || select.value);
+        select.dataset.storageKey = key;
+        select.value = status;
+        setStatusSelectClass(select, status);
+        select.addEventListener('change', () => {
+          setStatusSelectClass(select, select.value);
+          writeStatusValue(key, select.value);
+        });
+      });
+    }
     function openDoc(id, headingHash = '') {
       const doc = docs.find(d => d.id === id) || docs[0];
       currentId = doc.id;
@@ -836,8 +961,13 @@ def build_html(docs: list[dict]) -> str:
       `;
       const hasSections = enhanceDocBody(doc);
       bindInternalMarkdownLinks(doc);
+      bindStatusSelects(doc);
       document.getElementById('copyPath').addEventListener('click', async () => {
-        try { await navigator.clipboard.writeText(doc.path); } catch (_) {}
+        try {
+          await navigator.clipboard.writeText(doc.path);
+        } catch (error) {
+          console.warn('문서 경로를 클립보드에 복사하지 못했습니다.', error);
+        }
       });
       const expandSections = document.getElementById('expandSections');
       const collapseSections = document.getElementById('collapseSections');
@@ -881,12 +1011,7 @@ def build_html(docs: list[dict]) -> str:
             </div>
             <h3>빠른 시작</h3>
             <div class="grid cards">
-              ${quickCard('전체 스토리 보기', '전체 스토리', '첫 월요일부터 진엔딩 후 방학식까지 확정된 본편 흐름을 소설형으로 읽습니다.')}
-              ${quickCard('실패 외전 보기', '전체 스토리 외전: 실패 루프와 새드엔딩', '하연 실패 루프와 새드엔딩을 짧고 선명한 외전 장면으로 확인합니다.')}
-              ${quickCard('날짜 흐름 보기', '날짜별 진행 달력', 'D-32부터 축제 마지막 날, D+3 방학식까지의 전체 진행을 확인합니다.')}
-              ${quickCard('핵심 시스템 보기', '미연시 코어 시스템 요구사항', '날짜, 회차, 플래그, 조건, 엔딩 기록 같은 런타임 상태를 확인합니다.')}
-              ${quickCard('하루 행동 보기', '하루 행동 시스템 기획', '평일/주말 슬롯과 선택 행동 구조를 확인합니다.')}
-              ${quickCard('캐릭터 관계 보기', '캐릭터와 관계', '재윤, 하연, 소하, 서린, 미루의 관계 축을 확인합니다.')}
+              ${quickStarts.map(card => quickCard(card.label, card.title, card.desc)).join('')}
             </div>
           </div>
         </section>
@@ -945,7 +1070,11 @@ def build_html(docs: list[dict]) -> str:
 </body>
 </html>
 '''
-    return html_text.replace('__DATA__', data_json)
+    return (
+        html_text
+        .replace('__DATA__', data_json)
+        .replace('__STATUS_CLASSES__', status_classes_json)
+    )
 
 def main() -> None:
     docs = collect_docs()

@@ -7,12 +7,15 @@
 - [VisualNovelPlugin 데이터 상세 설계](./VisualNovelPlugin_데이터_상세설계.md)
 - [D-Day 최소 프로토타입 테스트 시나리오](./D-Day_최소_프로토타입_테스트_시나리오.md)
 - [하루 행동 시스템](./하루_행동_시스템.md)
+- [개발 일정](../개발_일정.md)
 
 ## 현재 초점
 
 스토리 기획을 실제 게임 구조로 옮기기 위해 날짜, 행동 슬롯, 병렬 이벤트, 조건 분기, 루프/엔딩 상태를 정리한다.
 
 현재 판단은 StoryFlow 코어를 미연시 전용으로 크게 바꾸지 않고, 별도 `VisualNovelPlugin`을 만들어 StoryFlow 위에 `StoryState`, 이벤트 허브, VN용 Shot/Branch 템플릿을 얹는 방향이다. 1차 구현 범위는 `VisualNovelPlugin_1차_구현범위.md`, 상태/이벤트 데이터 상세는 `VisualNovelPlugin_데이터_상세설계.md`를 따른다.
+
+현재 구현 순서와 마일스톤은 [개발 일정](../개발_일정.md)에서 확인한다.
 
 역할 분리:
 
