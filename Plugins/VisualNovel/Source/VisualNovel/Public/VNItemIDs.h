@@ -6,7 +6,7 @@
 #include "ItemID.h"
 #include "VNItemIDs.generated.h"
 
-USTRUCT(BlueprintType)
+USTRUCT(BlueprintType, meta = (ShortToolTip = "도메인에 따라 해석되는 범용 VN ItemID"))
 struct VISUALNOVEL_API FVNItemID : public FItemID
 {
 	GENERATED_BODY()
@@ -20,7 +20,7 @@ public:
 	}
 };
 
-USTRUCT(BlueprintType)
+USTRUCT(BlueprintType, meta = (ShortToolTip = "캐릭터 진행도 키로 쓰는 Character 타입 ItemID"))
 struct VISUALNOVEL_API FVNCharacterID : public FItemID
 {
 	GENERATED_BODY()
@@ -37,7 +37,7 @@ public:
 	}
 };
 
-USTRUCT(BlueprintType)
+USTRUCT(BlueprintType, meta = (ShortToolTip = "기억 조각/사고 단서 보유 여부에 쓰는 Fragment 타입 ItemID"))
 struct VISUALNOVEL_API FVNFragmentID : public FItemID
 {
 	GENERATED_BODY()
@@ -54,7 +54,7 @@ public:
 	}
 };
 
-USTRUCT(BlueprintType)
+USTRUCT(BlueprintType, meta = (ShortToolTip = "이미 본 이벤트 기록에 쓰는 Event 타입 ItemID"))
 struct VISUALNOVEL_API FVNEventID : public FItemID
 {
 	GENERATED_BODY()
@@ -71,7 +71,7 @@ public:
 	}
 };
 
-USTRUCT(BlueprintType)
+USTRUCT(BlueprintType, meta = (ShortToolTip = "엔딩 관람 기록에 쓰는 Ending 타입 ItemID"))
 struct VISUALNOVEL_API FVNEndingID : public FItemID
 {
 	GENERATED_BODY()
