@@ -4,16 +4,16 @@
 
 namespace
 {
-	bool CompareBool(bool _left, const FVNCondition& _condition)
+	bool CompareBool(bool _left, bool _exists, const FVNCondition& _condition)
 	{
 		if (_condition.Op == EVNCompareOp::Exists)
 		{
-			return _left;
+			return _exists;
 		}
 
 		if (_condition.Op == EVNCompareOp::NotExists)
 		{
-			return !_left;
+			return !_exists;
 		}
 
 		if (_condition.Op == EVNCompareOp::NotEqual)
@@ -106,7 +106,7 @@ bool UVNConditionEvaluator::EvaluateCondition(const FVNStoryState& _story_state,
 		}
 
 		const bool* value = _story_state.BoolMap.Find(_condition.Key);
-		return CompareBool(value != nullptr ? *value : false, _condition);
+		return CompareBool(value != nullptr ? *value : false, value != nullptr, _condition);
 	}
 	case EVNStateDomain::Int:
 	{

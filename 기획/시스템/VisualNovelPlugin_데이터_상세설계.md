@@ -520,6 +520,7 @@ public:
 2. `Any`는 비어 있으면 통과, 값이 있으면 하나 이상 참이어야 한다.
 3. `None`은 모두 거짓이어야 한다.
 4. 세 배열을 모두 통과해야 조건 통과다.
+5. `Exists`/`NotExists`는 `Bool`/`Int`/`Name` 도메인에서 값의 참거짓이 아니라 키 존재 여부를 본다. bool 값 자체를 비교할 때는 `Equal`/`NotEqual`을 사용한다.
 
 예시:
 
@@ -529,6 +530,35 @@ public:
 | 소하 정리 완료 | `Domain=Bool`, `Key=IsSohaResolved`, `Op=Equal`, `BoolValue=true` |
 | 서린 단서 보유 | `Domain=Fragment`, `ItemID=Fragment:HasSeorinClue`, `Op=Exists` |
 | 회피 루프 아님 | `Domain=Int`, `Key=Avoid`, `Op=Less`, `IntValue=3` |
+
+### 9.1 StoryState Subsystem과 조건 Branch
+
+`UVNStoryStateSubsystem`은 현재 GameInstance의 `FVNStoryState`를 보관한다. `UVNConditionBranch`는 StoryFlow의 `UStoryBranchBase`를 상속하며, 실행 시 이 Subsystem의 StoryState를 읽어 출력 인덱스를 고른다.
+
+`FVNConditionBranchCase`는 하나의 Branch 출력 후보를 나타낸다.
+
+| 필드 | 타입 | 설명 |
+|---|---|---|
+| `DisplayName` | `FText` | Branch 출력 핀 표시명 |
+| `ConditionSet` | `FVNConditionSet` | 이 출력이 선택되기 위해 만족해야 하는 조건 묶음 |
+
+`UVNConditionBranch` 출력 핀은 항상 아래 순서를 따른다.
+
+```text
+Cases[0]
+Cases[1]
+Cases[2]
+...
+Default
+```
+
+평가 규칙:
+
+1. `Cases`를 위에서부터 순서대로 평가한다.
+2. 처음 통과한 Case의 배열 인덱스를 StoryFlow 출력 인덱스로 반환한다.
+3. 어떤 Case도 통과하지 못하면 마지막 `Default` 출력으로 보낸다.
+4. `UVNStoryStateSubsystem`을 찾지 못한 경우도 `Default`로 보낸다.
+5. `Cases`나 `DefaultOutputName`이 바뀌면 Branch 출력 목록을 다시 구성한다.
 
 ## 10. VN Shot 입력 필드
 

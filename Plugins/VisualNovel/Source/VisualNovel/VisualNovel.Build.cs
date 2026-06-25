@@ -26,6 +26,8 @@ public class VisualNovel : ModuleRules
 			new string[]
 			{
 				"Core",
+				"ItemCore",
+				"StoryFlow",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -40,9 +42,7 @@ public class VisualNovel : ModuleRules
 				"SlateCore",
                 "CommonLibrary",
 				"CustomUI",
-				"StoryFlow",
 				"SaveGame",
-				"ItemCore"
 			}
 			);
 		

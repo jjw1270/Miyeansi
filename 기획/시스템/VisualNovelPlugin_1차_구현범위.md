@@ -240,12 +240,13 @@ FVNStoryState StoryState
 3. `UVNConditionEvaluator` 작성
    - bool/int/name 조건
    - all/any/not 조합
-4. VN용 Shot 1차 작성
+4. `UVNStoryStateSubsystem` / `UVNConditionBranch` 작성
+   - 현재 StoryState 보관
+   - 조건 Case 기반 출력 인덱스 선택
+5. VN용 Shot 1차 작성
    - `UVNDialogueShot`
    - `UVNChoiceShot`
    - 필요 시 `UVNWaitShot`
-5. `UVNConditionBranch` 작성
-   - StoryState 기반 출력 인덱스 선택
 6. `UVNEventHubSubsystem` 작성
    - 날짜/슬롯 이벤트 선택
    - 이벤트 완료 후 슬롯 진행
@@ -361,7 +362,7 @@ TE_01_Wake
 | 상태 저장 테스트 | bool/int/name 상태가 저장 후 복원되는지 확인 |
 | 조건 평가 테스트 | `HayeonTrust >= 6`, `IsSohaResolved == true` 같은 조건 결과 확인 |
 | 선택지 테스트 | 조건 충족 선택지만 표시되고 선택 시 상태가 바뀌는지 확인 |
-| Branch 테스트 | 같은 Scene에서 상태에 따라 다른 NextSceneID가 선택되는지 확인 |
+| Branch 테스트 | 조건 Case와 Default fallback에 따라 다른 출력 인덱스가 선택되는지 확인 |
 | 저장 복원 테스트 | SceneID/ShotID와 StoryState가 같이 복원되는지 확인 |
 | D-Day 분기 테스트 | 진엔딩 조건 충족/미충족 케이스가 갈라지는지 확인 |
 | 루프 복귀 테스트 | 실패 결과 후 D-25 월요일 허브로 돌아가는지 확인 |
@@ -378,5 +379,5 @@ TE_01_Wake
 
 1. `VisualNovelPlugin` 모듈 생성과 StoryFlow 의존성 연결
 2. `FVNStoryState`, `FVNStateChange`, `FVNConditionSet` 구현
-3. `UVNDialogueShot`, `UVNChoiceShot`, `UVNConditionBranch` 구현
+3. `UVNDialogueShot`, `UVNChoiceShot` 구현
 4. 데이터 검증 규칙을 실제 에디터 Validator 작업 목록으로 분해
