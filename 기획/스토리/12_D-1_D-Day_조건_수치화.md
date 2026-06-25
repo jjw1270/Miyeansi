@@ -22,7 +22,7 @@
 | `HayeonTrust` | 0~8 | 하연이 재윤에게 자기 침묵과 속도를 맡길 수 있는 신뢰 | D-25, D-24, D-18~D-16, D-13, D-7, D-2, D-1, D-Day 낮 하연 선택 |
 | `HayeonPace` | 0~4 | 재윤이 하연의 조용한 자리 선호와 동선을 읽는 정도 | D-17, D-16, D-2, D-1, D-Day 낮 하연 선택 |
 | `HasHayeonD2Premonition` | true/false | D-2 말하지 못한 예감에서 하연을 성급히 몰아붙이지 않고 조용한 동선을 이해했는지 | D-2 |
-| `HasHayeonClue` | true/false | 사고 기억이 `하연에게 가려던 선택`과 연결되는 핵심 조각 | D-2, D-1, D-Day 낮 하연 선택 |
+| `Fragment:HasHayeonClue` | 보유/미보유 | 사고 기억이 `하연에게 가려던 선택`과 연결되는 핵심 조각 | D-2, D-1, D-Day 낮 하연 선택 |
 
 하연 축 판정:
 
@@ -66,19 +66,19 @@
 
 | 변수 | 범위 | 의미 |
 | --- | --- | --- |
-| `HasSohaClue` | true/false | 재윤이 축제날 하연을 향했다는 감정 단서 |
-| `HasSeorinClue` | true/false | 소무대 임시 구조물/조명 프레임 위험 단서 |
-| `HasMiruClue` | true/false | 출입 제한 표지/고정끈/보고 대상 단서 |
-| `HasHayeonClue` | true/false | 서로 말하려던 장소와 끊긴 문장 단서 |
-| `ClueScore` | 0~4 | 위 네 단서의 true 개수 |
+| `Fragment:HasSohaClue` | 보유/미보유 | 재윤이 축제날 하연을 향했다는 감정 단서 |
+| `Fragment:HasSeorinClue` | 보유/미보유 | 소무대 임시 구조물/조명 프레임 위험 단서 |
+| `Fragment:HasMiruClue` | 보유/미보유 | 출입 제한 표지/고정끈/보고 대상 단서 |
+| `Fragment:HasHayeonClue` | 보유/미보유 | 서로 말하려던 장소와 끊긴 문장 단서 |
+| `ClueScore` | 0~4 | 네 Fragment ItemID 보유 개수 |
 
 사고 단서 판정:
 
 | 상태 | 조건 | 의미 |
 | --- | --- | --- |
-| 안정 | `ClueScore >= 3` 그리고 `HasHayeonClue == true` | 사고를 하연에게 가려던 선택의 결과로 연결 가능 |
-| 보정 가능 | `ClueScore == 2` 그리고 `HasHayeonClue == true` | D-Day 낮 조사/인물 선택으로 1개 보강 가능 |
-| 감정 연결 부족 | `ClueScore >= 3` 하지만 `HasHayeonClue == false` | 장소와 물건은 알아도 하연에게 가려던 의미가 비어 있음 |
+| 안정 | `ClueScore >= 3` 그리고 `Fragment:HasHayeonClue` 보유 | 사고를 하연에게 가려던 선택의 결과로 연결 가능 |
+| 보정 가능 | `ClueScore == 2` 그리고 `Fragment:HasHayeonClue` 보유 | D-Day 낮 조사/인물 선택으로 1개 보강 가능 |
+| 감정 연결 부족 | `ClueScore >= 3` 하지만 `Fragment:HasHayeonClue` 미보유 | 장소와 물건은 알아도 하연에게 가려던 의미가 비어 있음 |
 | 정보 부족 | `ClueScore <= 1` | D-Day 낮 한 번으로는 사고 의미 연결이 어려움 |
 
 ## 5. 회피 축
@@ -187,7 +187,7 @@ Avoid <= 3
 | 4 | `IsSeorinResolved == false` 그리고 `SeorinControl == 3` | 서린 새드엔딩 |
 | 5 | `IsMiruResolved == false` 그리고 `MiruDepend == 3` | 미루 새드엔딩 |
 | 6 | 미해결 관계가 1개 이상 남음 | 기존 관계 미정리 루프(`RelationUnresolved`) 또는 해당 인물 새드엔딩 약화판 |
-| 7 | `ClueScore < 3` 또는 `HasHayeonClue == false` | 사고 의미 미연결 루프 |
+| 7 | `ClueScore < 3` 또는 `Fragment:HasHayeonClue` 미보유 | 사고 의미 미연결 루프 |
 | 8 | `Avoid >= 4` | 회피 루프. 하연에게 가려 하지만 마지막 말을 미룸 |
 | 9 | 모든 필수 조건 충족 | 진엔딩 |
 

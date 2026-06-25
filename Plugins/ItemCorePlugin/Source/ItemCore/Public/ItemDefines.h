@@ -12,7 +12,10 @@ enum class EItemType : uint8
 {
 	NA = 0								UMETA(Hidden),
 
-	Story								UMETA(ToolTip = "스토리"),
+	Character						UMETA(ToolTip = "캐릭터"),
+	Fragment						UMETA(ToolTip = "기억 조각"),
+	Event								UMETA(ToolTip = "이벤트"),
+	Ending							UMETA(ToolTip = "엔딩"),
 
 	MAX								UMETA(Hidden)
 };

@@ -61,10 +61,10 @@
 | BoolMap | `IsSohaResolved` | true |
 | BoolMap | `IsSeorinResolved` | true |
 | BoolMap | `IsMiruResolved` | true |
-| BoolMap | `HasSohaClue` | true |
-| BoolMap | `HasSeorinClue` | true |
-| BoolMap | `HasMiruClue` | true |
-| BoolMap | `HasHayeonClue` | true |
+| Fragments | `Fragment:HasSohaClue` | present |
+| Fragments | `Fragment:HasSeorinClue` | present |
+| Fragments | `Fragment:HasMiruClue` | present |
+| Fragments | `Fragment:HasHayeonClue` | present |
 | BoolMap | `HasAcceptedAccidentMemory` | false |
 | BoolMap | `IsDDayTrueEnding` | false |
 | BoolMap | `CanEnterTrueEndingEpilogue` | false |
@@ -83,10 +83,10 @@
 
 ```text
 ClueScore =
-  HasSohaClue ? 1 : 0
-+ HasSeorinClue ? 1 : 0
-+ HasMiruClue ? 1 : 0
-+ HasHayeonClue ? 1 : 0
+  Fragments.Contains(Fragment:HasSohaClue) ? 1 : 0
++ Fragments.Contains(Fragment:HasSeorinClue) ? 1 : 0
++ Fragments.Contains(Fragment:HasMiruClue) ? 1 : 0
++ Fragments.Contains(Fragment:HasHayeonClue) ? 1 : 0
 ```
 
 ## 4. D-Day 결과 평가 기준
@@ -115,7 +115,7 @@ if IsMiruResolved == false and MiruDepend == 3:
 if IsSohaResolved == false or IsSeorinResolved == false or IsMiruResolved == false:
     return RelationUnresolved
 
-if ClueScore < 3 or HasHayeonClue == false:
+if ClueScore < 3 or Fragments.Contains(Fragment:HasHayeonClue) == false:
     return AccFail
 
 if Avoid >= 4:
@@ -169,7 +169,7 @@ return True
 | BoolMap | `IsSohaResolved` | true |
 | BoolMap | `IsSeorinResolved` | true |
 | BoolMap | `IsMiruResolved` | true |
-| BoolMap | `HasHayeonClue` | true |
+| Fragments | `Fragment:HasHayeonClue` | present |
 
 기대 결과:
 
@@ -203,7 +203,7 @@ return True
 | BoolMap | `HasHayeonD2Premonition` | true |
 | IntMap | `HayeonTrust` | 6 |
 | IntMap | `HayeonPace` | 3 |
-| BoolMap | `HasHayeonClue` | true |
+| Fragments | `Fragment:HasHayeonClue` | present |
 | IntMap | `Avoid` | 2 |
 
 추가 계산:
@@ -242,10 +242,10 @@ ClueScore = 3
 | BoolMap | `IsSohaResolved` | true |
 | BoolMap | `IsSeorinResolved` | true |
 | BoolMap | `IsMiruResolved` | true |
-| BoolMap | `HasSohaClue` | true |
-| BoolMap | `HasSeorinClue` | true |
-| BoolMap | `HasMiruClue` | false |
-| BoolMap | `HasHayeonClue` | false |
+| Fragments | `Fragment:HasSohaClue` | present |
+| Fragments | `Fragment:HasSeorinClue` | present |
+| Fragments | `Fragment:HasMiruClue` | absent |
+| Fragments | `Fragment:HasHayeonClue` | absent |
 
 계산:
 
@@ -264,7 +264,7 @@ ClueScore = 2
 
 통과 기준:
 
-- `ClueScore < 3` 또는 `HasHayeonClue == false`가 `AccFail`을 만든다.
+- `ClueScore < 3` 또는 `Fragment:HasHayeonClue` 미보유가 `AccFail`을 만든다.
 - 이 실패는 하연 감정 부족이 아니라 사고 의미 미연결 실패로 분류된다.
 
 ### TC-DDAY-004: 회피 누적 실패 루프
@@ -283,10 +283,10 @@ ClueScore = 2
 | BoolMap | `IsSohaResolved` | true |
 | BoolMap | `IsSeorinResolved` | true |
 | BoolMap | `IsMiruResolved` | true |
-| BoolMap | `HasSohaClue` | true |
-| BoolMap | `HasSeorinClue` | true |
-| BoolMap | `HasMiruClue` | true |
-| BoolMap | `HasHayeonClue` | true |
+| Fragments | `Fragment:HasSohaClue` | present |
+| Fragments | `Fragment:HasSeorinClue` | present |
+| Fragments | `Fragment:HasMiruClue` | present |
+| Fragments | `Fragment:HasHayeonClue` | present |
 | IntMap | `Avoid` | 4 |
 
 기대 결과:
@@ -316,7 +316,7 @@ ClueScore = 2
 | BoolMap | `IsHiddenCollapseActive` | true |
 | IntMap | `HayeonTrust` | 8 |
 | IntMap | `HayeonPace` | 4 |
-| BoolMap | `HasHayeonClue` | true |
+| Fragments | `Fragment:HasHayeonClue` | present |
 | IntMap | `Avoid` | 0 |
 
 기대 결과:

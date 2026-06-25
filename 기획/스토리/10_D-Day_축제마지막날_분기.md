@@ -946,7 +946,7 @@ D-3 정리 결과에 따라 짧은 회상 컷이 끼어든다.
 | 4 | `IsSeorinResolved == false` + `SeorinControl == 3` | 서린 새드엔딩 |
 | 5 | `IsMiruResolved == false` + `MiruDepend == 3` | 미루 새드엔딩 |
 | 6 | 기존 관계 미해결이 남음 | 기존 관계 미정리 루프 또는 약화 새드엔딩 |
-| 7 | `ClueScore < 3` 또는 `HasHayeonClue == false` | 사고 의미 미연결 루프 |
+| 7 | `ClueScore < 3` 또는 `Fragment:HasHayeonClue` 미보유 | 사고 의미 미연결 루프 |
 | 8 | `Avoid >= 4` | 회피 루프 |
 | 9 | 모든 필수 조건 충족 | 진엔딩 |
 

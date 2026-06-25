@@ -24,16 +24,40 @@
 
 StoryFlow의 `FStorySceneID`, `FStoryShotID`, `FStoryFlowRef`를 그대로 사용한다.
 
-VN 전용 ID는 `FName` 래퍼를 만들 수 있지만 1차에서는 과도한 래퍼를 늘리지 않는다.
+VN 콘텐츠 카탈로그 ID는 `ItemCore`의 `FItemID`를 사용한다. `FItemID`는 오타 방지, 에디터 선택 UI, DataTable/Registry 검증, 표시명/에셋 메타데이터 조회를 위한 기준 ID다.
 
-| ID | 권장 타입 | 예시 | 용도 |
+상태 키는 1차에서 계속 `FName`을 사용한다. 상태 키는 조건 평가용 내부 키이고, 콘텐츠 카탈로그 항목과 성격이 다르다.
+
+| 구분 | 타입 | 예시 | 용도 |
 |---|---|---|---|
-| EventID | `FName` | `Cafe_04DayOne` | EventSet 안의 이벤트 고유 ID |
-| CharID | `FName` | `Hayeon` | 캐릭터 진행도 키 |
-| FlagID | `FName` | `IsSohaResolved` | bool 상태 키 |
-| ValueID | `FName` | `HayeonTrust` | int 상태 키 |
-| FragID | `FName` | `HasSeorinClue` | 기억 조각 키 |
-| EndingID | `FName` | `TrueEnding` | 엔딩 기록 키 |
+| StoryFlow Scene/Shot | `FStorySceneID`, `FStoryShotID`, `FStoryFlowRef` | `DDay_05True` | StoryFlow 그래프 위치와 전환 |
+| 상태 키 | `FName` | `IsSohaResolved`, `HayeonTrust` | Bool/Int/NameMap 조건과 상태 변경 |
+| 날짜/주차 ID | `FName` | `D25`, `DDay`, `FinalWeek` | 진행 상태와 EventHub 필터 |
+| 선택 결과 값 | `FName` | `Hayeon`, `Alone`, `True` | Shot 내부 선택 결과와 간단한 분기 값 |
+| VN 콘텐츠 ID | `FItemID` | `Character:Hayeon`, `BGM:HayeonTheme` | 캐릭터, 리소스, 이벤트, 수집/엔딩 카탈로그 |
+
+### 2.1 VN ItemType
+
+`ItemCore`의 `EItemType`에는 VisualNovelPlugin에서 쓰는 콘텐츠 타입을 추가한다. 각 타입은 같은 `FItemID` 구조를 쓰되, Registry Row와 검증 규칙을 다르게 둔다.
+
+| ItemType | 설명 | 주요 사용처 | Row에 담을 대표 메타데이터 |
+|---|---|---|---|
+| `Character` | VN 등장인물의 기준 ID. 화자와 화면 표시 캐릭터를 모두 이 타입으로 참조한다. | `SpeakerID`, `CharacterID`, `CharMap` key | 표시 이름, 이름 색상, 기본 스프라이트, 기본 음성/대사 스타일 |
+| `CharacterSprite` | 캐릭터의 스탠딩 이미지/표정/의상/포즈 조합 ID. `PoseID`를 별도로 두지 않고 스프라이트 Row가 표현한다. | `CharacterSpriteID` | 소유 캐릭터, 스프라이트 에셋, 표정/의상/포즈 태그, 기본 표시 위치 |
+| `Background` | 배경/장소 이미지 또는 배경 연출 ID. | `BackgroundID` | 배경 에셋, 장소명, 시간대, 전환 효과 기본값 |
+| `BGM` | 배경 음악 ID. | `BgmID` | 사운드 에셋, 루프 여부, 볼륨 기본값, 분위기 태그 |
+| `SFX` | 효과음 ID. | `SfxID` | 사운드 에셋, 볼륨 기본값, 중복 재생 정책 |
+| `Event` | EventHub가 관리하는 이벤트 식별 ID. 실제 시작 위치는 `StartSceneID`로 분리한다. | `EventID`, `SeenEvents` | 표시명, 요약, 정렬/분류 태그, 개발 상태 |
+| `Fragment` | 기억 조각/단서/수집형 메타 진행 ID. | `Fragments`, 조건/상태 변경의 Fragment 도메인 | 표시명, 설명, 아이콘, 관련 캐릭터, 관련 엔딩 |
+| `Ending` | 엔딩 기록과 갤러리 해금 기준 ID. | `EndingMap`, 조건/상태 변경의 Ending 도메인 | 엔딩명, 엔딩 타입, 설명, 대표 이미지, 갤러리 표시 여부 |
+
+### 2.2 ItemID 적용 원칙
+
+- SaveGame에는 Row 포인터나 에셋을 저장하지 않고 `FItemID` 값만 저장한다.
+- 런타임에서 자주 쓰는 캐릭터/리소스 Row는 VN 전용 캐시 Subsystem에서 `FItemID -> Row`로 보관해 조회 비용을 줄인다.
+- `FItemID::Zero`는 미지정 값으로 사용한다.
+- `FItemID` 필드는 에디터 검증에서 기대 `ItemType`과 Registry 존재 여부를 확인한다.
+- `FStorySceneID`는 StoryFlow 그래프 ID이므로 `EventID`와 합치지 않는다.
 
 ## 3. enum 1차 후보
 
@@ -152,9 +176,9 @@ enum class EVNStateDomain : uint8
 | `Bool` | `BoolMap` |
 | `Int` | `IntMap` |
 | `Name` | `NameMap` |
-| `Fragment` | `Fragments` |
-| `SeenEvent` | `SeenEvents` |
-| `Ending` | `EndingMap` |
+| `Fragment` | `Fragments` (`TSet<FItemID>`) |
+| `SeenEvent` | `SeenEvents` (`TSet<FItemID>`) |
+| `Ending` | `EndingMap` (`TMap<FItemID, FVNEndingState>`) |
 
 ## 4. FVNStoryState
 
@@ -194,16 +218,16 @@ public:
 	TMap<FName, FName> NameMap;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TMap<FName, FVNCharState> CharMap;
+	TMap<FItemID, FVNCharState> CharMap;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSet<FName> Fragments;
+	TSet<FItemID> Fragments;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TMap<FName, FVNEndingState> EndingMap;
+	TMap<FItemID, FVNEndingState> EndingMap;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSet<FName> SeenEvents;
+	TSet<FItemID> SeenEvents;
 };
 ```
 
@@ -219,10 +243,10 @@ public:
 | `BoolMap` | `TMap<FName, bool>` | empty | 필수 | 플래그 상태 |
 | `IntMap` | `TMap<FName, int32>` | empty | 필수 | 호감도/압박/회피 같은 수치 상태 |
 | `NameMap` | `TMap<FName, FName>` | empty | 선택 | `DDayResult`, 마지막 선택 등 이름형 상태 |
-| `CharMap` | `TMap<FName, FVNCharState>` | empty | 필수 | 캐릭터별 진행도 |
-| `Fragments` | `TSet<FName>` | empty | 필수 | 기억 조각/사고 단서 보유 목록 |
-| `EndingMap` | `TMap<FName, FVNEndingState>` | empty | 필수 | 엔딩별 관람/반복 기록 |
-| `SeenEvents` | `TSet<FName>` | empty | 필수 | 이미 본 이벤트 ID |
+| `CharMap` | `TMap<FItemID, FVNCharState>` | empty | 필수 | `Character` ItemID별 진행도 |
+| `Fragments` | `TSet<FItemID>` | empty | 필수 | 보유한 `Fragment` ItemID 목록 |
+| `EndingMap` | `TMap<FItemID, FVNEndingState>` | empty | 필수 | `Ending` ItemID별 관람/반복 기록 |
+| `SeenEvents` | `TSet<FItemID>` | empty | 필수 | 이미 본 `Event` ItemID 목록 |
 
 ### 4.3 날짜 ID 표기
 
@@ -241,7 +265,7 @@ public:
 
 ## 5. FVNCharState
 
-캐릭터별 진행 상태다. 캐릭터 키는 `Hayeon`, `Soha`, `Seorin`, `Miru`를 사용한다.
+캐릭터별 진행 상태다. `FVNStoryState::CharMap`의 키는 `Character` 타입 `FItemID`를 사용한다.
 
 ```cpp
 USTRUCT(BlueprintType)
@@ -322,17 +346,17 @@ public:
 | `SeenCount` | `int32` | 0 | 반복 관람 횟수 |
 | `LastSeenDay` | `FName` | `None` | 마지막 관람 시점 |
 
-1차 엔딩 ID:
+1차 엔딩 ItemID 라벨 예시:
 
 ```text
-TrueEnding
-HayeonMiss
-SohaSad
-SeorinSad
-MiruSad
-AccFail
-AvoidLoop
-HiddenCollapse
+Ending:TrueEnding
+Ending:HayeonMiss
+Ending:SohaSad
+Ending:SeorinSad
+Ending:MiruSad
+Ending:AccFail
+Ending:AvoidLoop
+Ending:HiddenCollapse
 ```
 
 ## 7. 상태 키 초기값
@@ -377,12 +401,14 @@ Miyeansi 1차 프로토타입의 초기 상태다.
 
 ### Fragments
 
-| 키 | 의미 |
+`Fragments`는 `Fragment` 타입 ItemID의 집합이다. 아래 값은 Row 라벨 예시다.
+
+| ItemID 라벨 | 의미 |
 |---|---|
-| `HasSohaClue` | 하연을 좋아했다는 감정 단서 |
-| `HasSeorinClue` | 소무대 임시 구조물 위험 단서 |
-| `HasMiruClue` | 출입금지 표지/고정끈 문제 단서 |
-| `HasHayeonClue` | 하연과 함께 사고 기억에 도달할 감정 단서 |
+| `Fragment:HasSohaClue` | 하연을 좋아했다는 감정 단서 |
+| `Fragment:HasSeorinClue` | 소무대 임시 구조물 위험 단서 |
+| `Fragment:HasMiruClue` | 출입금지 표지/고정끈 문제 단서 |
+| `Fragment:HasHayeonClue` | 하연과 함께 사고 기억에 도달할 감정 단서 |
 
 ### NameMap
 
@@ -410,6 +436,9 @@ public:
 	FName Key = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FItemID ItemID = FItemID::Zero;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EVNStateOp Op = EVNStateOp::Set;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -426,13 +455,14 @@ public:
 | 필드 | 용도 |
 |---|---|
 | `Domain` | 상태가 들어 있는 영역. `Bool`, `Int`, `Name`, `Fragment`, `SeenEvent`, `Ending` |
-| `Key` | 바꿀 상태 키 |
+| `Key` | `Bool`, `Int`, `Name` 도메인에서 바꿀 상태 키 |
+| `ItemID` | `Fragment`, `SeenEvent`, `Ending` 도메인에서 바꿀 ItemID |
 | `Op` | 변경 방식 |
 | `BoolValue` | bool 상태에 사용 |
 | `IntValue` | int 상태에 사용 |
 | `NameValue` | name 상태나 set 추가에 사용 |
 
-1차에서는 `Domain`으로 `BoolMap`, `IntMap`, `NameMap`, `Fragments`, `SeenEvents`, `EndingMap` 중 어디에 적용할지 명시한다. 키 접두어만 보고 타입을 추론하지 않는다.
+`Domain`으로 `BoolMap`, `IntMap`, `NameMap`, `Fragments`, `SeenEvents`, `EndingMap` 중 어디에 적용할지 명시한다. `Bool`/`Int`/`Name`은 `Key`를 사용하고, `Fragment`/`SeenEvent`/`Ending`은 `ItemID`를 사용한다. 키 접두어만 보고 타입을 추론하지 않는다.
 
 ## 9. 조건 구조
 
@@ -450,6 +480,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName Key = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FItemID ItemID = FItemID::Zero;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EVNCompareOp Op = EVNCompareOp::Equal;
@@ -494,7 +527,7 @@ public:
 |---|---|
 | 하연 신뢰 6 이상 | `Domain=Int`, `Key=HayeonTrust`, `Op=GreaterEqual`, `IntValue=6` |
 | 소하 정리 완료 | `Domain=Bool`, `Key=IsSohaResolved`, `Op=Equal`, `BoolValue=true` |
-| 서린 단서 보유 | `Domain=Fragment`, `Key=HasSeorinClue`, `Op=Exists` |
+| 서린 단서 보유 | `Domain=Fragment`, `ItemID=Fragment:HasSeorinClue`, `Op=Exists` |
 | 회피 루프 아님 | `Domain=Int`, `Key=Avoid`, `Op=Less`, `IntValue=3` |
 
 ## 10. VN Shot 입력 필드
@@ -517,7 +550,7 @@ public:
 |---|---|
 | UPROPERTY 필드명 | 짧은 PascalCase |
 | 런타임 내부 멤버 | 기존 코드처럼 `_` + PascalCase |
-| 캐릭터/배경/BGM/SFX 참조 | 1차는 `FName` ID 사용. 실제 에셋 로딩은 프로젝트 UI/리소스 레이어에서 해석 |
+| 캐릭터/스프라이트/배경/BGM/SFX 참조 | `FItemID` 사용. 실제 Row/에셋은 ItemCore Registry와 VN 캐시 Subsystem에서 해석 |
 | 상태 변경 | `FVNStateChange` 배열 재사용 |
 | 조건 | `FVNConditionSet` 재사용 |
 | 긴 문장 | `FText`, `meta=(MultiLine=true)` |
@@ -555,13 +588,10 @@ struct FVNCharacterCue
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName CharacterID = NAME_None;
+	FItemID CharacterID = FItemID::Zero;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName SpriteID = NAME_None;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName PoseID = NAME_None;
+	FItemID CharacterSpriteID = FItemID::Zero;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName PositionID = NAME_None;
@@ -573,9 +603,8 @@ public:
 
 | 필드 | 필수 | 설명 |
 |---|---|---|
-| `CharacterID` | 필수 | `Hayeon`, `Soha`, `Seorin`, `Miru`, `Jaeyoon` 등 |
-| `SpriteID` | 선택 | 캐릭터 기본 스프라이트 ID |
-| `PoseID` | 선택 | 표정/포즈 ID. 예: `Calm`, `Smile`, `Uneasy` |
+| `CharacterID` | 필수 | `Character` 타입 ItemID. 예: `Character:Hayeon` |
+| `CharacterSpriteID` | 선택 | `CharacterSprite` 타입 ItemID. 표정/의상/포즈 조합은 Row에서 해석 |
 | `PositionID` | 선택 | 화면 위치. 예: `Left`, `Center`, `Right` |
 | `HasFocus` | 선택 | 대사 화자 강조 여부 |
 
@@ -594,7 +623,7 @@ public:
 	EVNDialogueLineKind Kind = EVNDialogueLineKind::Dialogue;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName SpeakerID = NAME_None;
+	FItemID SpeakerID = FItemID::Zero;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FText SpeakerName;
@@ -603,13 +632,13 @@ public:
 	FText Text;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName BackgroundID = NAME_None;
+	FItemID BackgroundID = FItemID::Zero;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName BgmID = NAME_None;
+	FItemID BgmID = FItemID::Zero;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName SfxID = NAME_None;
+	FItemID SfxID = FItemID::Zero;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FVNCharacterCue> Characters;
@@ -622,12 +651,12 @@ public:
 | 필드 | 필수 | 설명 |
 |---|---|---|
 | `Kind` | 필수 | 대사/내레이션/독백/시스템 문구 구분 |
-| `SpeakerID` | 조건부 | 일반 대사면 권장. 내레이션은 비워도 됨 |
-| `SpeakerName` | 선택 | 표시 이름을 직접 덮어쓸 때 사용. 비우면 `SpeakerID`를 UI에서 해석 |
+| `SpeakerID` | 조건부 | 일반 대사면 `Character` 타입 ItemID 권장. 내레이션은 비워도 됨 |
+| `SpeakerName` | 선택 | 표시 이름을 직접 덮어쓸 때 사용. 비우면 `SpeakerID`의 Character Row에서 해석 |
 | `Text` | 필수 | 실제 출력 문장 |
-| `BackgroundID` | 선택 | 이 줄에서 바꿀 배경. 비우면 유지 |
-| `BgmID` | 선택 | 이 줄에서 바꿀 BGM. 비우면 유지 |
-| `SfxID` | 선택 | 이 줄에서 재생할 효과음 |
+| `BackgroundID` | 선택 | `Background` 타입 ItemID. 비우면 유지 |
+| `BgmID` | 선택 | `BGM` 타입 ItemID. 비우면 유지 |
+| `SfxID` | 선택 | `SFX` 타입 ItemID. 이 줄에서 재생할 효과음 |
 | `Characters` | 선택 | 화면에 표시할 캐릭터 큐 |
 | `OnShow` | 선택 | 이 줄이 표시되는 순간 적용할 상태 변경 |
 
@@ -801,7 +830,7 @@ struct FVNEventDef
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FName EventID = NAME_None;
+	FItemID EventID = FItemID::Zero;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText DisplayName;
@@ -848,7 +877,7 @@ public:
 
 | 필드 | 타입 | 필수 | 설명 |
 |---|---|---|---|
-| `EventID` | `FName` | 필수 | 이벤트 고유 ID. SceneID와 같아도 되지만 반드시 유일해야 함 |
+| `EventID` | `FItemID` | 필수 | `Event` 타입 ItemID. `StartSceneID`와 별개이며 반드시 유일해야 함 |
 | `DisplayName` | `FText` | 선택 | 허브 선택지에 표시할 이름. 자동 이벤트는 비워도 됨 |
 | `DayID` | `FName` | 필수 | 실행 날짜. 예: `D1`, `DDay`, `DPlus2` |
 | `Slot` | `EVNDaySlot` | 필수 | 실행 슬롯 |
@@ -874,7 +903,7 @@ public:
 5. `RunMode == Auto`인 이벤트가 있으면 우선순위가 가장 높은 1개를 바로 실행한다.
 6. 플레이어가 이벤트를 선택하면 `StartCond`를 다시 확인한다.
 7. 시작 시 `OnStart`를 적용하고 `StartSceneID`로 전환한다.
-8. 완료 시 `SeenEvents`에 `EventID`를 추가하고 `OnComplete`, `CompleteFlag`, `NextDay`, `NextSlot`을 적용한다.
+8. 완료 시 `SeenEvents`에 `EventID` ItemID를 추가하고 `OnComplete`, `CompleteFlag`, `NextDay`, `NextSlot`을 적용한다.
 
 ## 13. Miyeansi 1차 이벤트 예시
 
@@ -882,7 +911,7 @@ public:
 
 | 필드 | 값 |
 |---|---|
-| `EventID` | `Cafe_04DayOne` |
+| `EventID` | `Event:Cafe_04DayOne` |
 | `DisplayName` | 쉬어가 카페 운영 돕기 |
 | `DayID` | `D1` |
 | `Slot` | `AfterSchool` |
@@ -897,7 +926,7 @@ public:
 
 | 필드 | 값 |
 |---|---|
-| `EventID` | `DDay_00Entry` |
+| `EventID` | `Event:DDay_00Entry` |
 | `DisplayName` | 축제 마지막 날 시작 |
 | `DayID` | `DDay` |
 | `Slot` | `Morning` |
@@ -910,7 +939,7 @@ public:
 
 | 필드 | 값 |
 |---|---|
-| `EventID` | `DDay_04Gate` |
+| `EventID` | `Event:DDay_04Gate` |
 | `DisplayName` | 폐장 후 최종 분기 |
 | `DayID` | `DDay` |
 | `Slot` | `Night` |
@@ -923,7 +952,7 @@ public:
 
 | 필드 | 값 |
 |---|---|
-| `EventID` | `TE_00_TimeSkip` |
+| `EventID` | `Event:TE_00_TimeSkip` |
 | `DisplayName` | 토요일 암전 |
 | `DayID` | `DPlus1` |
 | `Slot` | `None` |
@@ -940,11 +969,11 @@ public:
 
 | 검증 | 오류 조건 |
 |---|---|
-| EventID 중복 | 같은 `UVNEventSetAsset` 안에 동일 `EventID`가 2개 이상 |
+| EventID 중복 | 같은 `UVNEventSetAsset` 안에 동일 `EventID` ItemID가 2개 이상 |
 | StartSceneID 누락 | `StartSceneID`가 비어 있음 |
 | DayID 누락 | 일반 이벤트인데 `DayID`가 비어 있음 |
-| 조건 키 공백 | `FVNCondition.Key`가 비어 있음 |
-| 상태 변경 키 공백 | `FVNStateChange.Key`가 비어 있음 |
+| 조건 키/ItemID 공백 | `Bool`/`Int`/`Name` 조건의 `Key`가 비어 있거나, `Fragment`/`SeenEvent`/`Ending` 조건의 `ItemID`가 비어 있음 |
+| 상태 변경 키/ItemID 공백 | `Bool`/`Int`/`Name` 변경의 `Key`가 비어 있거나, `Fragment`/`SeenEvent`/`Ending` 변경의 `ItemID`가 비어 있음 |
 | DialogueShot 빈 줄 | `UVNDialogueShot.Lines`가 비어 있거나, `Text`와 연출/상태 변경이 모두 비어 있는 줄이 있음 |
 | ChoiceShot 선택지 없음 | `UVNChoiceShot.Options`가 비어 있거나 `ShowCond` 통과 후 표시 가능한 선택지가 없음 |
 | ChoiceID 중복 | 같은 `UVNChoiceShot` 안에 동일 `ChoiceID`가 2개 이상 |
@@ -952,6 +981,8 @@ public:
 | 자동 이벤트 충돌 | 같은 날짜/슬롯에 `Auto`가 여러 개이고 Priority도 같음 |
 | 완료 후 이동 없음 | 허브로 돌아갈 수 없는 이벤트가 `NextSlot`/Transition을 모두 제공하지 않음 |
 | D-Day 결과 누락 | `DDay_04Gate`가 처리할 결과 SceneID가 없음 |
+| ItemID 타입 불일치 | `SpeakerID`, `CharacterID`, `CharacterSpriteID`, `BackgroundID`, `BgmID`, `SfxID`, `EventID`, `Fragment`, `Ending` 필드가 기대 ItemType과 다름 |
+| ItemID Registry 누락 | ItemID가 `FItemID::Zero`가 아닌데 ItemCore Registry에서 Row를 찾을 수 없음 |
 
 ## 15. 1차 완료 기준
 
@@ -959,7 +990,7 @@ public:
 - `UVNDialogueShot` / `UVNChoiceShot` 입력 필드가 StoryFlow 기본 Shot/Branch 구조를 바꾸지 않는 범위에서 확정됨.
 - `UVNEventSetAsset`이 날짜/슬롯/조건/SceneID/상태 변경을 모두 표현할 수 있음.
 - D-Day 진엔딩, 실패 루프 1종, 진엔딩 후일담 시작 이벤트를 같은 구조로 표현할 수 있음.
-- 데이터 검증 규칙으로 중복 EventID, 빈 SceneID, 자동 이벤트 충돌을 잡을 수 있음.
+- 데이터 검증 규칙으로 중복 EventID, 빈 SceneID, 자동 이벤트 충돌, ItemID 타입/Registry 누락을 잡을 수 있음.
 - Miyeansi 전용 키는 데이터에만 있고, `VisualNovelPlugin` 코드에 하드코딩하지 않는 경계가 유지됨.
 
 ## 16. 후속 작업

@@ -219,7 +219,7 @@ D-2 성공 시 추가:
 @endif
 
 @if HasHayeonD2Premonition == true && DidChooseHayeonOnDDay == true
-  @flag HasHayeonClue = true
+  @add_fragment Fragment:HasHayeonClue
 @endif
 
 @flag DidUseDDayChoice = true
@@ -293,7 +293,7 @@ D-3 미정리 보정 선택:
   @flag DidChooseSohaOnDDay = true
 @elseif SohaPressure <= 2
   @flag IsSohaResolved = true
-  @flag HasSohaClue = true
+  @add_fragment Fragment:HasSohaClue
   @flag DidChooseSohaOnDDay = true
 @else
   @flag SohaPressure = 3
@@ -360,10 +360,10 @@ D-3 미정리 보정 선택:
 ```text
 @if IsSeorinResolved == true
   @flag DidChooseSeorinOnDDay = true
-  @flag HasSeorinClue = true
+  @add_fragment Fragment:HasSeorinClue
 @elseif SeorinControl <= 2
   @flag IsSeorinResolved = true
-  @flag HasSeorinClue = true
+  @add_fragment Fragment:HasSeorinClue
   @flag DidChooseSeorinOnDDay = true
 @else
   @flag SeorinControl = 3
@@ -431,10 +431,10 @@ D-3 미정리 보정 선택:
 ```text
 @if IsMiruResolved == true
   @flag DidChooseMiruOnDDay = true
-  @flag HasMiruClue = true
+  @add_fragment Fragment:HasMiruClue
 @elseif MiruDepend <= 2
   @flag IsMiruResolved = true
-  @flag HasMiruClue = true
+  @add_fragment Fragment:HasMiruClue
   @flag DidChooseMiruOnDDay = true
 @else
   @flag MiruDepend = 3
@@ -488,13 +488,13 @@ D-3 미정리 보정 선택:
   @flag IsMissingPhysicalClue = true
 @endif
 
-@if HasSeorinClue == false
-  @flag HasSeorinClue = true
-@elseif HasMiruClue == false
-  @flag HasMiruClue = true
+@if HasFragment(Fragment:HasSeorinClue) == false
+  @add_fragment Fragment:HasSeorinClue
+@elseif HasFragment(Fragment:HasMiruClue) == false
+  @add_fragment Fragment:HasMiruClue
 @endif
 
-@if HasHayeonClue == false
+@if HasFragment(Fragment:HasHayeonClue) == false
   @flag DidAvoidHeartOnDDay = true
 @endif
 
@@ -1158,7 +1158,7 @@ function EvaluateDDayResult():
     if IsSohaResolved == false or IsSeorinResolved == false or IsMiruResolved == false:
         return RelationUnresolved
 
-    if ClueScore < 3 or HasHayeonClue == false:
+    if ClueScore < 3 or HasFragment(Fragment:HasHayeonClue) == false:
         return AccFail
 
     if Avoid >= 4:

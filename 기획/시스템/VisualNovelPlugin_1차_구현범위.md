@@ -25,16 +25,18 @@ StoryFlow Scene 실행
 | 영역 | StoryFlowPlugin | VisualNovelPlugin | Miyeansi 프로젝트 |
 |---|---|---|---|
 | Scene/Shot/Branch 실행 | 담당 | 사용 | 데이터 제작 |
-| 대사창, 선택지, 캐릭터 표시 | 비관여 | 기본 Shot/UI 브리지 제공 | UI 스킨 적용 |
+| 대사창, 선택지, 캐릭터 표시 | 비관여 | 기본 Shot/UI 브리지 제공, 캐릭터/리소스 ItemID 조회 | UI 스킨 적용 |
 | 날짜/슬롯/플래그 | 비관여 | 범용 상태 계층 제공 | Miyeansi 상태 키 정의 |
 | 루트/히로인/엔딩 내용 | 비관여 | 비관여 | 담당 |
 | 저장/복원 | `FStoryFlowRef` 제공 | `StoryState`와 묶어 저장 | 저장 슬롯 정책 적용 |
+| 콘텐츠 ID Registry | 비관여 | ItemCore의 `FItemID`로 공통 콘텐츠 참조 | DataTable/Row 제작 |
 | 갤러리/크레딧 연출 | 비관여 | 1차 제외 | 2차 제작 |
 
 원칙:
 
 - StoryFlow 코어는 미연시 장르를 몰라도 된다.
 - `VisualNovelPlugin`은 StoryFlow에 의존해도 되지만, StoryFlow는 `VisualNovelPlugin`에 의존하지 않는다.
+- `VisualNovelPlugin`은 캐릭터, 캐릭터 스프라이트, 배경, BGM, SFX, 이벤트, 기억 조각, 엔딩을 `ItemCore`의 `FItemID`로 참조한다.
 - 플러그인 코드에 `Hayeon`, `Soha`, `IsDDayTrueEnding` 같은 Miyeansi 전용 키를 하드코딩하지 않는다.
 - Miyeansi 전용 조건은 DataAsset, DataTable, Blueprint, 프로젝트 코드에서 주입한다.
 
@@ -53,8 +55,8 @@ StoryFlow Scene 실행
 | 회차 | `LoopCount` | 루프 연출, 반복 이벤트 압축 |
 | 범용 플래그 | `IsHayeonBoothD1Complete`, `IsDDayTrueEnding` | 조건 분기 |
 | 정수 상태 | `HayeonTrust`, `HayeonPace`, `Avoid` | 점수 조건 |
-| 캐릭터 진행 | `Hayeon`, `Soha`, `Seorin`, `Miru` | 루트 단계, 마지막 선택 슬롯 |
-| 기억 조각 | `HasSohaClue`, `HasSeorinClue`, `HasMiruClue`, `HasHayeonClue` | 진엔딩 조건 |
+| 캐릭터 진행 | `Character:Hayeon`, `Character:Soha`, `Character:Seorin`, `Character:Miru` | 루트 단계, 마지막 선택 슬롯 |
+| 기억 조각 | `Fragment:HasSohaClue`, `Fragment:HasSeorinClue`, `Fragment:HasMiruClue`, `Fragment:HasHayeonClue` | 진엔딩 조건 |
 | 엔딩 기록 | `TrueEnding`, `SohaSad` | 루프/수집/재진입 제어 |
 | 현재 StoryFlow 위치 | `FStoryFlowRef` | 저장/로드 후 장면 복원 |
 
@@ -65,6 +67,7 @@ StoryFlow Scene 실행
 - bool
 - int
 - name/string ID
+- ItemID 기반 콘텐츠 ID
 - tag 배열 또는 name set
 
 2차 범위:
@@ -85,7 +88,7 @@ StoryFlow Scene 실행
 | int 비교 | `HayeonTrust >= 6` |
 | name 일치 | `CurrentDay == DDay` |
 | 플래그 모두 충족 | `IsSohaResolved`, `IsSeorinResolved`, `IsMiruResolved` |
-| 플래그 하나 이상 충족 | `HasSohaClue` 또는 `HasSeorinClue` |
+| 기억 조각 하나 이상 보유 | `Fragment:HasSohaClue` 또는 `Fragment:HasSeorinClue` |
 | 부정 조건 | `Avoid < 3` |
 
 1차에서는 조건을 DataAsset/Blueprint에서 조합 가능한 구조로 두고, 문자열 수식 파서는 만들지 않는다.
@@ -177,8 +180,8 @@ FVNStoryState StoryState
 
 - 현재 SceneID / ShotID
 - StoryState 전체
-- 관람한 이벤트 ID
-- 엔딩 기록
+- 관람한 Event ItemID
+- Ending ItemID 기반 엔딩 기록
 - 루프 횟수
 - 설정값은 1차 범위에서 제외 가능
 
@@ -229,6 +232,7 @@ FVNStoryState StoryState
 
 1. `VisualNovelPlugin` 모듈 생성
    - StoryFlow 의존성 연결
+   - ItemCore 의존성 연결
    - Miyeansi 전용 데이터 하드코딩 금지 확인
 2. `FVNStoryState`와 저장용 구조 작성
    - bool/int/name 상태 저장
@@ -247,6 +251,7 @@ FVNStoryState StoryState
    - 이벤트 완료 후 슬롯 진행
 7. SaveGame 브리지 작성
    - `FStoryFlowRef + FVNStoryState` 저장/복원
+   - 캐릭터/이벤트/기억 조각/엔딩 ItemID 저장/복원 확인
 8. Miyeansi 검증용 최소 데이터 연결
    - `DDay_03Assess`
    - `DDay_04Gate`
@@ -264,6 +269,7 @@ FVNStoryState StoryState
 - `UVNConditionBranch`가 StoryState를 읽어 서로 다른 다음 Scene으로 보낸다.
 - EventHub가 날짜/슬롯 기준으로 시작 SceneID를 고른다.
 - 저장 후 재실행해도 `FStoryFlowRef`와 StoryState가 함께 복원된다.
+- 캐릭터, 캐릭터 스프라이트, 배경, BGM, SFX, 이벤트, 기억 조각, 엔딩 참조가 `FItemID`로 검증된다.
 - `DDay_04Gate`에서 진엔딩/실패 루프/새드엔딩 중 최소 2개 이상의 결과가 실제로 갈라진다.
 - 진엔딩 조건 충족 시 `DDay_04TrueChoice`에서 최종 선택 후 `DDay_05True`, `TE_00_TimeSkip` 순서로 이동한다.
 - 실패 루프 시 D-25 월요일 허브로 복귀한다.
@@ -285,10 +291,6 @@ HasConfirmedHayeonMutualFeelings
 IsSohaResolved
 IsSeorinResolved
 IsMiruResolved
-HasSohaClue
-HasSeorinClue
-HasMiruClue
-HasHayeonClue
 Avoid
 IsMissingPhysicalClue
 DidAvoidHeartOnDDay
@@ -302,6 +304,34 @@ CanEnterTrueEndingEpilogue
 HasSeenTrueEndingWake
 HasReachedTrueEndingMonday
 CanEnterTrueEndingCredit
+```
+
+1차 필수 ItemID 라벨:
+
+```text
+Character:Hayeon
+Character:Soha
+Character:Seorin
+Character:Miru
+Character:Jaeyoon
+Fragment:HasSohaClue
+Fragment:HasSeorinClue
+Fragment:HasMiruClue
+Fragment:HasHayeonClue
+Ending:TrueEnding
+Ending:HayeonMiss
+Ending:SohaSad
+Ending:SeorinSad
+Ending:MiruSad
+Ending:AccFail
+Ending:AvoidLoop
+Ending:HiddenCollapse
+Event:DDay_03Assess
+Event:DDay_04Gate
+Event:DDay_04TrueChoice
+Event:DDay_05True
+Event:TE_00_TimeSkip
+Event:TE_01_Wake
 ```
 
 1차 필수 SceneID:
