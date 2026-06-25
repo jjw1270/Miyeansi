@@ -1,4 +1,4 @@
-﻿# VisualNovel
+# VisualNovel
 
 `VisualNovel`은 Unreal Engine 5 프로젝트에서 `StoryFlow` 위에 **미연시 진행 상태**, **조건 평가**, **상태 변경**, **조건 Branch**를 얹기 위한 런타임 플러그인이다.
 
@@ -14,6 +14,8 @@
 - `UVNConditionEvaluator`는 조건 평가와 상태 변경 적용을 담당하는 Blueprint Function Library다.
 - `UVNStoryStateSubsystem`은 현재 GameInstance의 VN 진행 상태를 보관한다.
 - `UVNConditionBranch`는 StoryFlow Branch로 동작하며, 조건 Case를 순서대로 평가해 다음 출력 핀을 선택한다.
+- `UVNDialogueShot`은 대사 라인 진행과 OnEnter/OnShow/OnComplete 상태 변경 적용 구조를 제공한다.
+- `UVNChoiceShot`은 선택지 표시 조건, 활성 조건, 선택 결과 저장, OnSelect/OnComplete 적용 구조를 제공한다.
 - VN 콘텐츠 ID는 `FItemID`를 직접 노출하지 않고 `FVNCharacterID`, `FVNFragmentID`, `FVNEventID`, `FVNEndingID` 같은 용도별 래퍼를 사용한다.
 
 ---
@@ -35,7 +37,7 @@
 
 | 모듈 | 타입 | 역할 |
 | --- | --- | --- |
-| `VisualNovel` | Runtime | VN 상태 구조, ItemID 래퍼, 조건 평가, 상태 변경, StoryState Subsystem, 조건 Branch |
+| `VisualNovel` | Runtime | VN 상태 구조, ItemID 래퍼, 조건 평가, 상태 변경, StoryState Subsystem, 조건 Branch, Dialogue/Choice Shot |
 
 ### 주요 의존성
 
@@ -183,6 +185,39 @@ Default
 
 `Cases`나 `DefaultOutputName`이 바뀌면 StoryFlow Branch 출력 목록도 자동으로 다시 구성된다.
 
+### `UVNDialogueShot`
+
+파일: `Source/VisualNovel/Public/VNDialogueShot.h`
+
+`UStoryShotBase`를 상속한 VN 대사 Shot이다. 한 Shot 안에 여러 `FVNDialogueLine`을 담고, 진행 시 상태 변경을 적용한다.
+
+| 타입/필드 | 역할 |
+| --- | --- |
+| `EVNDialogueLineKind` | Dialogue/Narration/Monologue/System 구분 |
+| `FVNCharacterCue` | 캐릭터 ID, 스프라이트 ID, 위치, 포커스 정보 |
+| `FVNDialogueLine` | 한 줄의 텍스트, 리소스 ID, 캐릭터 큐, `OnShow` |
+| `Lines` | 출력할 대사 줄 목록 |
+| `OnEnter` | Shot 시작 시 적용할 상태 변경 |
+| `OnComplete` | 모든 줄이 끝난 뒤 적용할 상태 변경 |
+
+1차 구현은 UI 표시 대신 라인 진행과 상태 변경 적용 API를 제공한다.
+
+### `UVNChoiceShot`
+
+파일: `Source/VisualNovel/Public/VNChoiceShot.h`
+
+`UStoryShotBase`를 상속한 VN 선택지 Shot이다. 선택지 조건을 평가하고 선택 결과를 StoryState에 저장한다.
+
+| 타입/필드 | 역할 |
+| --- | --- |
+| `FVNChoiceOption` | ChoiceID, 표시 문구, ShowCond, EnableCond, OnSelect |
+| `FVNChoiceOptionState` | 평가된 선택지 표시/활성 상태 |
+| `ResultKey` | 선택한 ChoiceID를 저장할 `NameMap` 키 |
+| `OnEnter` | 선택지 표시 전 적용할 상태 변경 |
+| `OnComplete` | 선택 완료 뒤 공통 적용할 상태 변경 |
+
+1차 구현은 실제 선택지 위젯 표시 대신, 표시 가능한 선택지 계산과 선택 적용 API를 제공한다.
+
 ---
 
 ## 자동화 테스트
@@ -199,6 +234,8 @@ Source/VisualNovel/Private/Tests
 | --- | --- |
 | `VisualNovel.ConditionEvaluator.*` | 조건 평가, 조건 묶음, 상태 변경, batch 적용 |
 | `VisualNovel.ConditionBranch.*` | Branch 출력 구성, 조건 선택, Default fallback |
+| `VisualNovel.Shot.Dialogue.StateFlow` | DialogueShot 라인 진행과 상태 변경 적용 |
+| `VisualNovel.Shot.Choice.*` | ChoiceShot 선택지 조건 평가와 선택 결과 저장 |
 | `VisualNovel.StoryStateSubsystem.StateAccess` | StoryState 보관, 상태 변경 적용, 초기화 |
 
 명령줄 실행 예:
@@ -228,11 +265,12 @@ Source/VisualNovel/Private/Tests
 - StoryState Subsystem
 - Condition Branch
 - 조건/Branch 자동화 테스트
+- `UVNDialogueShot` 1차 구조
+- `UVNChoiceShot` 1차 구조
+- Shot 자동화 테스트
 
 진행 예정:
 
-- `UVNDialogueShot`
-- `UVNChoiceShot`
 - EventHub
 - SaveGame 브리지
 - D-Day 최소 프로토타입 플레이 검증
@@ -264,7 +302,11 @@ Source/VisualNovel/Private/Tests
 11. `Source/VisualNovel/Private/VNStoryStateSubsystem.cpp`
 12. `Source/VisualNovel/Public/VNConditionBranch.h`
 13. `Source/VisualNovel/Private/VNConditionBranch.cpp`
-14. `Source/VisualNovel/Private/Tests/*.cpp`
+14. `Source/VisualNovel/Public/VNDialogueShot.h`
+15. `Source/VisualNovel/Private/VNDialogueShot.cpp`
+16. `Source/VisualNovel/Public/VNChoiceShot.h`
+17. `Source/VisualNovel/Private/VNChoiceShot.cpp`
+18. `Source/VisualNovel/Private/Tests/*.cpp`
 
 ---
 

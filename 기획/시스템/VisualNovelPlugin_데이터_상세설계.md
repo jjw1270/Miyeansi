@@ -580,7 +580,7 @@ Default
 |---|---|
 | UPROPERTY 필드명 | 짧은 PascalCase |
 | 런타임 내부 멤버 | 기존 코드처럼 `_` + PascalCase |
-| 캐릭터/스프라이트/배경/BGM/SFX 참조 | `FItemID` 사용. 실제 Row/에셋은 ItemCore Registry와 VN 캐시 Subsystem에서 해석 |
+| 캐릭터/스프라이트/배경/BGM/SFX 참조 | `FVNCharacterID` 또는 `FVNItemID` 래퍼 사용. 실제 Row/에셋은 ItemCore Registry와 VN 캐시 Subsystem에서 해석 |
 | 상태 변경 | `FVNStateChange` 배열 재사용 |
 | 조건 | `FVNConditionSet` 재사용 |
 | 긴 문장 | `FText`, `meta=(MultiLine=true)` |
@@ -828,6 +828,16 @@ protected:
 | `Options[1].Text` | 혼자 소무대를 확인한다 |
 | 다음 노드 | `UVNConditionBranch` 또는 `DDay_03Assess` |
 
+
+### 10.8 1차 구현 메모
+
+현재 C++ 구현은 UI 위젯 표시 전 단계의 Shot 구조를 먼저 고정한다.
+
+- `UVNDialogueShot`은 `BeginDialogueInStoryState`, `AdvanceLineInStoryState`, `CompleteDialogueInStoryState`로 상태 변경 흐름을 검증할 수 있다.
+- `UVNChoiceShot`은 `GetVisibleOptionsFromStoryState`, `SelectOptionInStoryState`, `SelectOptionByChoiceIDInStoryState`로 조건 평가와 선택 결과 저장을 검증할 수 있다.
+- `FVNCharacterCue.CharacterID`와 `FVNDialogueLine.SpeakerID`는 `FVNCharacterID`를 사용한다.
+- 스프라이트/배경/BGM/SFX는 아직 전용 ItemType이 확정되지 않았으므로 `FVNItemID`로 보관한다.
+- 실제 대사창/선택지 위젯 연결은 다음 UI 브리지 단계에서 처리한다.
 ## 11. UVNEventSetAsset
 
 `UVNEventSetAsset`은 날짜/슬롯/조건별 이벤트 목록을 담는 데이터 에셋이다.
