@@ -24,7 +24,7 @@
 
 StoryFlow의 `FStorySceneID`, `FStoryShotID`, `FStoryFlowRef`를 그대로 사용한다.
 
-VN 콘텐츠 카탈로그 ID는 `ItemCore`의 `FItemID`를 사용한다. `FItemID`는 오타 방지, 에디터 선택 UI, DataTable/Registry 검증, 표시명/에셋 메타데이터 조회를 위한 기준 ID다.
+VN 콘텐츠 카탈로그 ID는 `ItemCore`의 `FItemID` 값을 기반으로 하되, C++ UPROPERTY에는 `FVNCharacterID`, `FVNFragmentID`, `FVNEventID`, `FVNEndingID`, `FVNItemID` 같은 VN 전용 wrapper를 우선 사용한다. wrapper는 `FItemID` 직접 노출을 줄이고 도메인별 기대 타입을 분명하게 하기 위한 기준 ID다.
 
 상태 키는 1차에서 계속 `FName`을 사용한다. 상태 키는 조건 평가용 내부 키이고, 콘텐츠 카탈로그 항목과 성격이 다르다.
 
@@ -34,11 +34,11 @@ VN 콘텐츠 카탈로그 ID는 `ItemCore`의 `FItemID`를 사용한다. `FItemI
 | 상태 키 | `FName` | `IsSohaResolved`, `HayeonTrust` | Bool/Int/NameMap 조건과 상태 변경 |
 | 날짜/주차 ID | `FName` | `D25`, `DDay`, `FinalWeek` | 진행 상태와 EventHub 필터 |
 | 선택 결과 값 | `FName` | `Hayeon`, `Alone`, `True` | Shot 내부 선택 결과와 간단한 분기 값 |
-| VN 콘텐츠 ID | `FItemID` | `Character:Hayeon`, `BGM:HayeonTheme` | 캐릭터, 리소스, 이벤트, 수집/엔딩 카탈로그 |
+| VN 콘텐츠 ID | `FVNCharacterID`, `FVNFragmentID`, `FVNEventID`, `FVNEndingID`, `FVNItemID` | `Character:Hayeon`, `BGM:HayeonTheme` | 캐릭터, 리소스, 이벤트, 수집/엔딩 카탈로그 |
 
 ### 2.1 VN ItemType
 
-`ItemCore`의 `EItemType`에는 VisualNovelPlugin에서 쓰는 콘텐츠 타입을 추가한다. 각 타입은 같은 `FItemID` 구조를 쓰되, Registry Row와 검증 규칙을 다르게 둔다.
+`ItemCore`의 `EItemType`에는 VisualNovelPlugin에서 쓰는 콘텐츠 타입을 단계적으로 추가한다. 현재 C++ 구현에서 확정된 타입은 `Character`, `Fragment`, `Event`, `Ending`이고, 리소스 계열은 후속 타입 후보로 둔다.
 
 | ItemType | 설명 | 주요 사용처 | Row에 담을 대표 메타데이터 |
 |---|---|---|---|
@@ -51,9 +51,24 @@ VN 콘텐츠 카탈로그 ID는 `ItemCore`의 `FItemID`를 사용한다. `FItemI
 | `Fragment` | 기억 조각/단서/수집형 메타 진행 ID. | `Fragments`, 조건/상태 변경의 Fragment 도메인 | 표시명, 설명, 아이콘, 관련 캐릭터, 관련 엔딩 |
 | `Ending` | 엔딩 기록과 갤러리 해금 기준 ID. | `EndingMap`, 조건/상태 변경의 Ending 도메인 | 엔딩명, 엔딩 타입, 설명, 대표 이미지, 갤러리 표시 여부 |
 
-### 2.2 ItemID 적용 원칙
+> 현재 구현 메모: `CharacterSprite`, `Background`, `BGM`, `SFX`는 아직 `ItemCore`의 전용 `EItemType`으로 확정하지 않는다. 해당 참조는 전용 타입을 추가하기 전까지 `FVNItemID` 메타 필드로 보관하고, 검증 규칙은 후속 ItemType 확정 시 강화한다.
 
-- SaveGame에는 Row 포인터나 에셋을 저장하지 않고 `FItemID` 값만 저장한다.
+### 2.2 구현된 VN ItemTableRow
+
+파일: `Plugins/VisualNovel/Source/VisualNovel/Public/VNItemTableRows.h`
+
+| Row 타입 | 상속 | 기본 ItemType | 대표 필드 |
+|---|---|---|---|
+| `FVNCharacterTableRow` | `FItemTableRow` | `Character` | `Description`, `NameColor`, `DefaultSpriteID`, `DialogueStyleID` |
+| `FVNFragmentTableRow` | `FItemTableRow` | `Fragment` | `Description`, `IconID`, `RelatedCharacterID`, `RelatedEndingID` |
+| `FVNEventTableRow` | `FItemTableRow` | `Event` | `Summary`, `CategoryTags`, `DefaultDayID`, `DefaultSlot` |
+| `FVNEndingTableRow` | `FItemTableRow` | `Ending` | `Description`, `EndingTypeID`, `RepresentativeImageID`, `ShouldShowInGallery` |
+
+각 Row 생성자는 `FItemTableRow(EItemType::...)`를 호출해 기본 `ItemID` 타입을 고정한다. Row에 들어가는 관련 캐릭터/단서/엔딩 참조는 VN wrapper 타입을 사용하고, 아직 전용 ItemType이 없는 이미지/사운드 리소스 참조는 `FVNItemID`로 둔다.
+
+### 2.3 ItemID 적용 원칙
+
+- SaveGame에는 Row 포인터나 에셋을 저장하지 않고 `FItemID` 값만 저장한다. 코드 입력면에서는 가능한 VN wrapper 타입을 사용한다.
 - 런타임에서 자주 쓰는 캐릭터/리소스 Row는 VN 전용 캐시 Subsystem에서 `FItemID -> Row`로 보관해 조회 비용을 줄인다.
 - `FItemID::Zero`는 미지정 값으로 사용한다.
 - `FItemID` 필드는 에디터 검증에서 기대 `ItemType`과 Registry 존재 여부를 확인한다.
@@ -838,9 +853,10 @@ protected:
 - `FVNCharacterCue.CharacterID`와 `FVNDialogueLine.SpeakerID`는 `FVNCharacterID`를 사용한다.
 - 스프라이트/배경/BGM/SFX는 아직 전용 ItemType이 확정되지 않았으므로 `FVNItemID`로 보관한다.
 - 실제 대사창/선택지 위젯 연결은 다음 UI 브리지 단계에서 처리한다.
+- VN 콘텐츠 DataTable Row는 `FVNCharacterTableRow`, `FVNFragmentTableRow`, `FVNEventTableRow`, `FVNEndingTableRow`로 먼저 고정한다.
 ## 11. UVNEventSetAsset
 
-`UVNEventSetAsset`은 날짜/슬롯/조건별 이벤트 목록을 담는 데이터 에셋이다.
+`UVNEventSetAsset`은 날짜/슬롯/조건별 이벤트 목록을 담는 데이터 에셋이다. 현재 C++ 1차 구현은 이 에셋과 `UVNEventHubSubsystem`으로 이벤트 표시 필터, Auto 선택, 시작/완료 상태 변경까지 검증한다.
 
 ### 11.1 C++ 구조 후보
 
@@ -856,7 +872,7 @@ public:
 };
 ```
 
-`UVNEventHubSubsystem`은 이 에셋을 읽어 현재 상태에서 실행 가능한 이벤트를 고른다.
+`UVNEventHubSubsystem`은 이 에셋을 읽어 현재 상태에서 실행 가능한 이벤트를 고른다. 1차 구현은 `GetVisibleEventsFromStoryState`, `TryFindAutoEventFromStoryState`, `BeginEventInStoryState`, `CompleteEventInStoryState` API를 제공한다.
 
 ## 12. FVNEventDef
 
@@ -945,6 +961,14 @@ public:
 7. 시작 시 `OnStart`를 적용하고 `StartSceneID`로 전환한다.
 8. 완료 시 `SeenEvents`에 `EventID` ItemID를 추가하고 `OnComplete`, `CompleteFlag`, `NextDay`, `NextSlot`을 적용한다.
 
+현재 구현 메모:
+
+- `GetVisibleEventsFromStoryState`는 `DayID`, `Slot`, `RunMode == Once`의 SeenEvents 제외, `ShowCond`, 유효한 `EventID`/`StartSceneID`를 확인한다.
+- `TryFindAutoEventFromStoryState`는 표시 가능하고 `StartCond`까지 통과한 Auto 이벤트 중 가장 높은 `Priority`를 고른다.
+- `BeginEventInStoryState`는 `StartCond`를 통과한 이벤트에 한해 `OnStart`를 적용한다.
+- `CompleteEventInStoryState`는 `SeenEvents`, `OnComplete`, `CompleteFlag`, `NextDay`, `NextSlot`을 적용한다.
+- 실제 StoryFlow Scene 전환 호출은 후속 UI/플로우 브리지 단계에서 처리한다.
+
 ## 13. Miyeansi 1차 이벤트 예시
 
 ### Cafe_04DayOne
@@ -1027,8 +1051,10 @@ public:
 ## 15. 1차 완료 기준
 
 - `FVNStoryState`의 루트 필드와 하위 구조가 C++ USTRUCT로 바로 옮길 수 있을 만큼 확정됨.
+- VN 콘텐츠 DataTable의 1차 Row 타입(`Character/Fragment/Event/Ending`)이 ItemCore 기반으로 구현됨.
 - `UVNDialogueShot` / `UVNChoiceShot` 입력 필드가 StoryFlow 기본 Shot/Branch 구조를 바꾸지 않는 범위에서 확정됨.
 - `UVNEventSetAsset`이 날짜/슬롯/조건/SceneID/상태 변경을 모두 표현할 수 있음.
+- `UVNEventHubSubsystem`이 현재 상태 기준 이벤트 표시, Auto 선택, 시작/완료 상태 변경을 자동화 테스트로 검증함.
 - D-Day 진엔딩, 실패 루프 1종, 진엔딩 후일담 시작 이벤트를 같은 구조로 표현할 수 있음.
 - 데이터 검증 규칙으로 중복 EventID, 빈 SceneID, 자동 이벤트 충돌, ItemID 타입/Registry 누락을 잡을 수 있음.
 - Miyeansi 전용 키는 데이터에만 있고, `VisualNovelPlugin` 코드에 하드코딩하지 않는 경계가 유지됨.

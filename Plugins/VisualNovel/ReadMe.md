@@ -16,7 +16,9 @@
 - `UVNConditionBranch`는 StoryFlow Branch로 동작하며, 조건 Case를 순서대로 평가해 다음 출력 핀을 선택한다.
 - `UVNDialogueShot`은 대사 라인 진행과 OnEnter/OnShow/OnComplete 상태 변경 적용 구조를 제공한다.
 - `UVNChoiceShot`은 선택지 표시 조건, 활성 조건, 선택 결과 저장, OnSelect/OnComplete 적용 구조를 제공한다.
+- `UVNEventSetAsset`과 `UVNEventHubSubsystem`은 날짜/슬롯/조건 기준으로 시작 가능한 이벤트를 고르고 시작/완료 상태 변경을 적용한다.
 - VN 콘텐츠 ID는 `FItemID`를 직접 노출하지 않고 `FVNCharacterID`, `FVNFragmentID`, `FVNEventID`, `FVNEndingID` 같은 용도별 래퍼를 사용한다.
+- `FVNCharacterTableRow`, `FVNFragmentTableRow`, `FVNEventTableRow`, `FVNEndingTableRow`는 ItemCore Row를 상속해 각 ItemType의 기본 메타데이터를 제공한다.
 
 ---
 
@@ -37,7 +39,7 @@
 
 | 모듈 | 타입 | 역할 |
 | --- | --- | --- |
-| `VisualNovel` | Runtime | VN 상태 구조, ItemID 래퍼, 조건 평가, 상태 변경, StoryState Subsystem, 조건 Branch, Dialogue/Choice Shot |
+| `VisualNovel` | Runtime | VN 상태 구조, ItemID 래퍼, ItemTableRow, 조건 평가, 상태 변경, StoryState Subsystem, 조건 Branch, Dialogue/Choice Shot, EventHub |
 
 ### 주요 의존성
 
@@ -68,6 +70,21 @@
 | `FVNEndingID` | 엔딩 관람 기록 |
 
 `FItemID`는 그대로 노출하지 않고, VN 도메인에 맞는 wrapper를 사용한다. 내부 값과 해시는 `FItemID`와 동일하게 동작한다.
+
+### ItemTableRow 계열
+
+파일: `Source/VisualNovel/Public/VNItemTableRows.h`
+
+ItemCore의 `FItemTableRow`를 상속한 VN 전용 데이터 테이블 Row다. 생성자에서 기대 `EItemType`을 고정하므로, 새 Row를 만들 때 기본 `ItemID` 타입이 자동으로 맞춰진다.
+
+| 타입 | 고정 ItemType | 대표 메타데이터 |
+| --- | --- | --- |
+| `FVNCharacterTableRow` | `Character` | 설명, 이름 색상, 기본 스프라이트 ID, 대사 스타일 ID |
+| `FVNFragmentTableRow` | `Fragment` | 설명, 아이콘 ID, 관련 캐릭터/엔딩 ID |
+| `FVNEventTableRow` | `Event` | 요약, 분류 태그, 기본 날짜/슬롯 |
+| `FVNEndingTableRow` | `Ending` | 설명, 엔딩 분류 ID, 대표 이미지 ID, 갤러리 표시 여부 |
+
+스프라이트/배경/BGM/SFX는 아직 `ItemCore`의 전용 `EItemType`으로 확정하지 않았으므로, 현재 Row 메타데이터에서는 `FVNItemID`로만 보관한다.
 
 ### `FVNStoryState`
 
@@ -218,6 +235,23 @@ Default
 
 1차 구현은 실제 선택지 위젯 표시 대신, 표시 가능한 선택지 계산과 선택 적용 API를 제공한다.
 
+### `UVNEventSetAsset` / `UVNEventHubSubsystem`
+
+파일: `Source/VisualNovel/Public/VNEventSetAsset.h`, `Source/VisualNovel/Public/VNEventHubSubsystem.h`
+
+날짜/슬롯/조건 기준으로 허브에서 보이거나 자동 실행할 이벤트를 고르는 1차 구조다.
+
+| 타입/함수 | 역할 |
+| --- | --- |
+| `FVNEventDef` | 이벤트 ID, 날짜/슬롯, 우선순위, 실행 방식, 조건, 시작 Scene, 시작/완료 상태 변경 |
+| `UVNEventSetAsset` | 제작 데이터로 관리할 이벤트 정의 배열 |
+| `GetVisibleEventsFromStoryState` | 현재 StoryState에서 허브 목록에 보이는 이벤트 계산 |
+| `TryFindAutoEventFromStoryState` | 시작 가능한 Auto 이벤트 중 우선순위가 가장 높은 이벤트 선택 |
+| `BeginEventInStoryState` | StartCond 확인 후 OnStart 적용 |
+| `CompleteEventInStoryState` | SeenEvents 기록, OnComplete, CompleteFlag, NextDay/NextSlot 적용 |
+
+1차 구현은 실제 StoryFlow 전환 호출 전 단계로, 어떤 `StartSceneID`를 실행해야 하는지와 상태 변화만 결정한다.
+
 ---
 
 ## 자동화 테스트
@@ -234,6 +268,8 @@ Source/VisualNovel/Private/Tests
 | --- | --- |
 | `VisualNovel.ConditionEvaluator.*` | 조건 평가, 조건 묶음, 상태 변경, batch 적용 |
 | `VisualNovel.ConditionBranch.*` | Branch 출력 구성, 조건 선택, Default fallback |
+| `VisualNovel.ItemTableRows.*` | VN Row의 기본 ItemType과 메타데이터 저장 |
+| `VisualNovel.EventHub.*` | 이벤트 표시 필터, Auto 선택, 시작/완료 상태 변경 |
 | `VisualNovel.Shot.Dialogue.StateFlow` | DialogueShot 라인 진행과 상태 변경 적용 |
 | `VisualNovel.Shot.Choice.*` | ChoiceShot 선택지 조건 평가와 선택 결과 저장 |
 | `VisualNovel.StoryStateSubsystem.StateAccess` | StoryState 보관, 상태 변경 적용, 초기화 |
@@ -259,6 +295,7 @@ Source/VisualNovel/Private/Tests
 완료:
 
 - VN 전용 ItemID 래퍼
+- VN 전용 ItemTableRow 계열
 - StoryState 구조
 - 조건/상태 변경 구조
 - 조건 평가기
@@ -267,11 +304,11 @@ Source/VisualNovel/Private/Tests
 - 조건/Branch 자동화 테스트
 - `UVNDialogueShot` 1차 구조
 - `UVNChoiceShot` 1차 구조
-- Shot 자동화 테스트
+- `UVNEventSetAsset` / `UVNEventHubSubsystem` 1차 구조
+- Shot/EventHub 자동화 테스트
 
 진행 예정:
 
-- EventHub
 - SaveGame 브리지
 - D-Day 최소 프로토타입 플레이 검증
 
@@ -280,7 +317,8 @@ Source/VisualNovel/Private/Tests
 ## 현재 한계 / 주의사항
 
 - SaveGame 브리지는 아직 구현 전이다.
-- Dialogue/Choice Shot은 아직 구현 전이다.
+- EventHub는 아직 StoryFlow 실제 Scene 전환 호출을 직접 수행하지 않고, 시작할 `StartSceneID`와 상태 변경까지만 결정한다.
+- Dialogue/Choice Shot은 UI 위젯 브리지 전 단계이며, 현재는 라인/선택 상태 흐름 API까지만 제공한다.
 - `UVNConditionBranch`는 현재 `UVNStoryStateSubsystem`의 메모리 상태만 읽는다.
 - Branch는 StoryFlow 정책에 따라 순간 판단 단계이며, Branch 자체를 저장 대상으로 보지 않는다.
 - Miyeansi 전용 키나 루트 조건은 플러그인 코드에 하드코딩하지 않고 DataAsset/Blueprint/프로젝트 코드에서 주입해야 한다.
@@ -293,20 +331,26 @@ Source/VisualNovel/Private/Tests
 2. `Source/VisualNovel/VisualNovel.Build.cs`
 3. `Source/VisualNovel/Public/VNDefines.h`
 4. `Source/VisualNovel/Public/VNItemIDs.h`
-5. `Source/VisualNovel/Public/VNStoryState.h`
-6. `Source/VisualNovel/Public/VNCondition.h`
-7. `Source/VisualNovel/Public/VNStateChange.h`
-8. `Source/VisualNovel/Public/VNConditionEvaluator.h`
-9. `Source/VisualNovel/Private/VNConditionEvaluator.cpp`
-10. `Source/VisualNovel/Public/VNStoryStateSubsystem.h`
-11. `Source/VisualNovel/Private/VNStoryStateSubsystem.cpp`
-12. `Source/VisualNovel/Public/VNConditionBranch.h`
-13. `Source/VisualNovel/Private/VNConditionBranch.cpp`
-14. `Source/VisualNovel/Public/VNDialogueShot.h`
-15. `Source/VisualNovel/Private/VNDialogueShot.cpp`
-16. `Source/VisualNovel/Public/VNChoiceShot.h`
-17. `Source/VisualNovel/Private/VNChoiceShot.cpp`
-18. `Source/VisualNovel/Private/Tests/*.cpp`
+5. `Source/VisualNovel/Public/VNItemTableRows.h`
+6. `Source/VisualNovel/Private/VNItemTableRows.cpp`
+7. `Source/VisualNovel/Public/VNStoryState.h`
+8. `Source/VisualNovel/Public/VNCondition.h`
+9. `Source/VisualNovel/Public/VNStateChange.h`
+10. `Source/VisualNovel/Public/VNConditionEvaluator.h`
+11. `Source/VisualNovel/Private/VNConditionEvaluator.cpp`
+12. `Source/VisualNovel/Public/VNStoryStateSubsystem.h`
+13. `Source/VisualNovel/Private/VNStoryStateSubsystem.cpp`
+14. `Source/VisualNovel/Public/VNConditionBranch.h`
+15. `Source/VisualNovel/Private/VNConditionBranch.cpp`
+16. `Source/VisualNovel/Public/VNDialogueShot.h`
+17. `Source/VisualNovel/Private/VNDialogueShot.cpp`
+18. `Source/VisualNovel/Public/VNChoiceShot.h`
+19. `Source/VisualNovel/Private/VNChoiceShot.cpp`
+20. `Source/VisualNovel/Public/VNEventSetAsset.h`
+21. `Source/VisualNovel/Private/VNEventSetAsset.cpp`
+22. `Source/VisualNovel/Public/VNEventHubSubsystem.h`
+23. `Source/VisualNovel/Private/VNEventHubSubsystem.cpp`
+24. `Source/VisualNovel/Private/Tests/*.cpp`
 
 ---
 
