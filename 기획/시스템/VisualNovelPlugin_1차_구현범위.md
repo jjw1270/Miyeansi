@@ -35,7 +35,7 @@ StoryFlow Scene 실행
 
 - StoryFlow 코어는 미연시 장르를 몰라도 된다.
 - `VisualNovelPlugin`은 StoryFlow에 의존해도 되지만, StoryFlow는 `VisualNovelPlugin`에 의존하지 않는다.
-- 플러그인 코드에 `Hayeon`, `Soha`, `DDayTrue` 같은 Miyeansi 전용 키를 하드코딩하지 않는다.
+- 플러그인 코드에 `Hayeon`, `Soha`, `IsDDayTrueEnding` 같은 Miyeansi 전용 키를 하드코딩하지 않는다.
 - Miyeansi 전용 조건은 DataAsset, DataTable, Blueprint, 프로젝트 코드에서 주입한다.
 
 ## 3. 1차 포함 범위
@@ -51,10 +51,10 @@ StoryFlow Scene 실행
 | 현재 날짜/주차 | `D-25`, `FinalWeek` | 이벤트 개방, 루프 복귀 |
 | 현재 슬롯 | `Morning`, `Lunch`, `AfterSchool`, `Evening` | 하루 행동 선택 |
 | 회차 | `LoopCount` | 루프 연출, 반복 이벤트 압축 |
-| 범용 플래그 | `HayeonBoothD1`, `DDayTrue` | 조건 분기 |
+| 범용 플래그 | `IsHayeonBoothD1Complete`, `IsDDayTrueEnding` | 조건 분기 |
 | 정수 상태 | `HayeonTrust`, `HayeonPace`, `Avoid` | 점수 조건 |
 | 캐릭터 진행 | `Hayeon`, `Soha`, `Seorin`, `Miru` | 루트 단계, 마지막 선택 슬롯 |
-| 기억 조각 | `ClueSoha`, `ClueSeorin`, `ClueMiru`, `ClueHayeon` | 진엔딩 조건 |
+| 기억 조각 | `HasSohaClue`, `HasSeorinClue`, `HasMiruClue`, `HasHayeonClue` | 진엔딩 조건 |
 | 엔딩 기록 | `TrueEnding`, `SohaSad` | 루프/수집/재진입 제어 |
 | 현재 StoryFlow 위치 | `FStoryFlowRef` | 저장/로드 후 장면 복원 |
 
@@ -81,11 +81,11 @@ StoryFlow Scene 실행
 
 | 조건 | 예시 |
 |---|---|
-| bool 일치 | `SohaDone == true` |
+| bool 일치 | `IsSohaResolved == true` |
 | int 비교 | `HayeonTrust >= 6` |
 | name 일치 | `CurrentDay == DDay` |
-| 플래그 모두 충족 | `SohaDone`, `SeorinDone`, `MiruDone` |
-| 플래그 하나 이상 충족 | `ClueSoha` 또는 `ClueSeorin` |
+| 플래그 모두 충족 | `IsSohaResolved`, `IsSeorinResolved`, `IsMiruResolved` |
+| 플래그 하나 이상 충족 | `HasSohaClue` 또는 `HasSeorinClue` |
 | 부정 조건 | `Avoid < 3` |
 
 1차에서는 조건을 DataAsset/Blueprint에서 조합 가능한 구조로 두고, 문자열 수식 파서는 만들지 않는다.
@@ -197,7 +197,7 @@ FVNStoryState StoryState
 - 엔딩 결과 기록
 - 루프 시작 날짜 결정
 - 루프 시 유지할 상태와 초기화할 상태 구분
-- 진엔딩이면 루프하지 않고 `TE_00_Sat`로 전환
+- 진엔딩이면 루프하지 않고 `TE_00_TimeSkip`로 전환
 
 1차 루프 정책:
 
@@ -250,8 +250,9 @@ FVNStoryState StoryState
 8. Miyeansi 검증용 최소 데이터 연결
    - `DDay_03Assess`
    - `DDay_04Gate`
+   - `DDay_04TrueChoice`
    - `DDay_05True`
-   - `TE_00_Sat`~`TE_01_Wake`
+   - `TE_00_TimeSkip`~`TE_01_Wake`
 9. 루프/엔딩 기록 최소 연결
    - 실패 루프 D-25 복귀
    - 진엔딩 후일담 진입
@@ -264,7 +265,7 @@ FVNStoryState StoryState
 - EventHub가 날짜/슬롯 기준으로 시작 SceneID를 고른다.
 - 저장 후 재실행해도 `FStoryFlowRef`와 StoryState가 함께 복원된다.
 - `DDay_04Gate`에서 진엔딩/실패 루프/새드엔딩 중 최소 2개 이상의 결과가 실제로 갈라진다.
-- 진엔딩 성공 시 `DDay_05True` 이후 `TE_00_Sat`로 이동한다.
+- 진엔딩 조건 충족 시 `DDay_04TrueChoice`에서 최종 선택 후 `DDay_05True`, `TE_00_TimeSkip` 순서로 이동한다.
 - 실패 루프 시 D-25 월요일 허브로 복귀한다.
 
 ## 7. Miyeansi 데이터 연결 기준
@@ -277,28 +278,30 @@ Miyeansi 전용 키는 프로젝트 데이터에서만 정의한다.
 ComaStart
 HayeonTrust
 HayeonPace
-HayeonBoothD1
-HayeonD2
-DDayHayeon
-HayeonMutual
-SohaDone
-SeorinDone
-MiruDone
-ClueSoha
-ClueSeorin
-ClueMiru
-ClueHayeon
+IsHayeonBoothD1Complete
+HasHayeonD2Premonition
+DidChooseHayeonOnDDay
+HasConfirmedHayeonMutualFeelings
+IsSohaResolved
+IsSeorinResolved
+IsMiruResolved
+HasSohaClue
+HasSeorinClue
+HasMiruClue
+HasHayeonClue
 Avoid
-MissPhysClue
-DDayNoHeart
-HiddenCollapse
-DDayTrueReady
-DDayTrue
-AccMemOk
-TE_Unlocked
-TE_Wake
-TE_Monday
-TE_Credit
+IsMissingPhysicalClue
+DidAvoidHeartOnDDay
+HasSeenHiddenCollapse
+IsHiddenCollapseActive
+IsRelationUnresolvedLoop
+CanEnterDDayTrueEnding
+IsDDayTrueEnding
+HasAcceptedAccidentMemory
+CanEnterTrueEndingEpilogue
+HasSeenTrueEndingWake
+HasReachedTrueEndingMonday
+CanEnterTrueEndingCredit
 ```
 
 1차 필수 SceneID:
@@ -306,11 +309,14 @@ TE_Credit
 ```text
 DDay_03Assess
 DDay_04Gate
+DDay_04TrueChoice
 DDay_05True
 DDay_06HayeonMiss
-DDay_10AccFail
-DDay_11Avoid
-TE_00_Sat
+DDay_10RelationUnresolved
+DDay_11AccFail
+DDay_12Avoid
+DDay_13HiddenCollapse
+TE_00_TimeSkip
 TE_01_Wake
 ```
 
@@ -323,7 +329,7 @@ TE_01_Wake
 | 테스트 | 확인 내용 |
 |---|---|
 | 상태 저장 테스트 | bool/int/name 상태가 저장 후 복원되는지 확인 |
-| 조건 평가 테스트 | `HayeonTrust >= 6`, `SohaDone == true` 같은 조건 결과 확인 |
+| 조건 평가 테스트 | `HayeonTrust >= 6`, `IsSohaResolved == true` 같은 조건 결과 확인 |
 | 선택지 테스트 | 조건 충족 선택지만 표시되고 선택 시 상태가 바뀌는지 확인 |
 | Branch 테스트 | 같은 Scene에서 상태에 따라 다른 NextSceneID가 선택되는지 확인 |
 | 저장 복원 테스트 | SceneID/ShotID와 StoryState가 같이 복원되는지 확인 |

@@ -10,7 +10,7 @@
 
 1. `DDay_03Assess`에서 D-Day 결과를 계산한다.
 2. `DDay_04Gate`에서 `DDayResult`에 따라 다른 Scene으로 간다.
-3. 진엔딩 조건 충족 시 `DDay_05True`로 진입하고 `TE_00_Sat`로 넘어간다.
+3. 진엔딩 조건 충족 시 `DDay_04TrueChoice`에서 최종 선택 후 `DDay_05True`로 진입하고 `TE_00_TimeSkip`로 넘어간다.
 4. 실패 루프 1종 이상이 D-25 복귀 상태를 만든다.
 
 이 테스트가 통과하면 `FVNStoryState`, `FVNCondition`, `FVNStateChange`, `UVNDialogueShot`, `UVNChoiceShot`, `UVNConditionBranch`의 최소 연결이 검증된다.
@@ -53,21 +53,21 @@
 
 | 영역 | 키 | 기본값 |
 |---|---|---|
-| BoolMap | `HiddenCollapse` | false |
-| BoolMap | `HayeonD2` | true |
-| BoolMap | `DDayHayeon` | true |
-| BoolMap | `HayeonBoothD1` | true |
-| BoolMap | `HayeonMutual` | false |
-| BoolMap | `SohaDone` | true |
-| BoolMap | `SeorinDone` | true |
-| BoolMap | `MiruDone` | true |
-| BoolMap | `ClueSoha` | true |
-| BoolMap | `ClueSeorin` | true |
-| BoolMap | `ClueMiru` | true |
-| BoolMap | `ClueHayeon` | true |
-| BoolMap | `AccMemOk` | false |
-| BoolMap | `DDayTrue` | false |
-| BoolMap | `TE_Unlocked` | false |
+| BoolMap | `IsHiddenCollapseActive` | false |
+| BoolMap | `HasHayeonD2Premonition` | true |
+| BoolMap | `DidChooseHayeonOnDDay` | true |
+| BoolMap | `IsHayeonBoothD1Complete` | true |
+| BoolMap | `HasConfirmedHayeonMutualFeelings` | false |
+| BoolMap | `IsSohaResolved` | true |
+| BoolMap | `IsSeorinResolved` | true |
+| BoolMap | `IsMiruResolved` | true |
+| BoolMap | `HasSohaClue` | true |
+| BoolMap | `HasSeorinClue` | true |
+| BoolMap | `HasMiruClue` | true |
+| BoolMap | `HasHayeonClue` | true |
+| BoolMap | `HasAcceptedAccidentMemory` | false |
+| BoolMap | `IsDDayTrueEnding` | false |
+| BoolMap | `CanEnterTrueEndingEpilogue` | false |
 | IntMap | `HayeonTrust` | 6 |
 | IntMap | `HayeonPace` | 3 |
 | IntMap | `SohaPressure` | 0 |
@@ -83,10 +83,10 @@
 
 ```text
 ClueScore =
-  ClueSoha ? 1 : 0
-+ ClueSeorin ? 1 : 0
-+ ClueMiru ? 1 : 0
-+ ClueHayeon ? 1 : 0
+  HasSohaClue ? 1 : 0
++ HasSeorinClue ? 1 : 0
++ HasMiruClue ? 1 : 0
++ HasHayeonClue ? 1 : 0
 ```
 
 ## 4. D-Day 결과 평가 기준
@@ -94,28 +94,28 @@ ClueScore =
 테스트용 평가 순서는 `13_D-Day_스크립트_분할.md`의 `EvaluateDDayResult()`와 같아야 한다.
 
 ```text
-if HiddenCollapse == true:
+if IsHiddenCollapseActive == true:
     return HiddenCollapse
 
-if HayeonD2 == false:
+if HasHayeonD2Premonition == false:
     return HayeonMiss
 
 if HayeonTrust < 6 or HayeonPace < 3:
     return HayeonMiss
 
-if SohaDone == false and SohaPressure == 3:
+if IsSohaResolved == false and SohaPressure == 3:
     return SohaSad
 
-if SeorinDone == false and SeorinControl == 3:
+if IsSeorinResolved == false and SeorinControl == 3:
     return SeorinSad
 
-if MiruDone == false and MiruDepend == 3:
+if IsMiruResolved == false and MiruDepend == 3:
     return MiruSad
 
-if SohaDone == false or SeorinDone == false or MiruDone == false:
-    return HayeonMiss
+if IsSohaResolved == false or IsSeorinResolved == false or IsMiruResolved == false:
+    return RelationUnresolved
 
-if ClueScore < 3 or ClueHayeon == false:
+if ClueScore < 3 or HasHayeonClue == false:
     return AccFail
 
 if Avoid >= 4:
@@ -142,13 +142,15 @@ return True
 |---|---|
 | `EvaluateDDayResult()` | `True` |
 | `NameMap["DDayResult"]` | `True` |
-| `DDay_04Gate` 출력 | `DDay_05True` |
-| `DDay_05True` 완료 후 | `HayeonMutual = true`, `AccMemOk = true`, `DDayTrue = true`, `TE_Unlocked = true` |
-| 다음 Scene | `TE_00_Sat` |
+| `DDay_04Gate` 출력 | `DDay_04TrueChoice` |
+| `DDay_04TrueChoice` 선택 | `[하연에게 말하러 간다]` 선택 시 `DDay_05True` |
+| `DDay_05True` 완료 후 | `HasConfirmedHayeonMutualFeelings = true`, `HasAcceptedAccidentMemory = true`, `IsDDayTrueEnding = true`, `CanEnterTrueEndingEpilogue = true` |
+| 다음 Scene | `TE_00_TimeSkip` |
 
 통과 기준:
 
-- `UVNConditionBranch`가 `DDayResult == True` 조건을 읽고 `DDay_05True`로 보낸다.
+- `UVNConditionBranch`가 `DDayResult == True` 조건을 읽고 `DDay_04TrueChoice`로 보낸다.
+- 최종 선택 Scene에서 `[하연에게 말하러 간다]`를 선택하면 `DDay_05True`로 보낸다.
 - `DDay_05True`의 `OnComplete` 또는 대응 상태 변경이 진엔딩 후일담 진입 조건을 켠다.
 
 ### TC-DDAY-002: 하연 조건 부족 실패 루프
@@ -161,13 +163,13 @@ return True
 
 | 영역 | 키 | 값 |
 |---|---|---|
-| BoolMap | `HayeonD2` | false |
+| BoolMap | `HasHayeonD2Premonition` | false |
 | IntMap | `HayeonTrust` | 8 |
 | IntMap | `HayeonPace` | 4 |
-| BoolMap | `SohaDone` | true |
-| BoolMap | `SeorinDone` | true |
-| BoolMap | `MiruDone` | true |
-| BoolMap | `ClueHayeon` | true |
+| BoolMap | `IsSohaResolved` | true |
+| BoolMap | `IsSeorinResolved` | true |
+| BoolMap | `IsMiruResolved` | true |
+| BoolMap | `HasHayeonClue` | true |
 
 기대 결과:
 
@@ -181,8 +183,48 @@ return True
 
 통과 기준:
 
-- `HayeonD2 == false`가 다른 성공 조건보다 먼저 실패를 만든다.
+- `HasHayeonD2Premonition == false`가 다른 성공 조건보다 먼저 실패를 만든다.
 - 실패 루프는 D+3로 가지 않고 D-25로 돌아간다.
+
+### TC-DDAY-REL-001: 기존 관계 미정리 약화판 루프
+
+목적:
+
+- 하연 조건은 충분하지만 기존 관계 하나가 약하게 미정리된 경우 `HayeonMiss`가 아니라 `RelationUnresolved`로 가는지 검증한다.
+
+입력 상태:
+
+| 영역 | 키 | 값 |
+|---|---|---|
+| BoolMap | `IsSohaResolved` | false |
+| IntMap | `SohaPressure` | 2 |
+| BoolMap | `IsSeorinResolved` | true |
+| BoolMap | `IsMiruResolved` | true |
+| BoolMap | `HasHayeonD2Premonition` | true |
+| IntMap | `HayeonTrust` | 6 |
+| IntMap | `HayeonPace` | 3 |
+| BoolMap | `HasHayeonClue` | true |
+| IntMap | `Avoid` | 2 |
+
+추가 계산:
+
+```text
+ClueScore = 3
+```
+
+기대 결과:
+
+| 단계 | 기대값 |
+|---|---|
+| `EvaluateDDayResult()` | `RelationUnresolved` |
+| `NameMap["DDayResult"]` | `RelationUnresolved` |
+| `DDay_04Gate` 출력 | `DDay_10RelationUnresolved` |
+| 실패 처리 후 | `IsRelationUnresolvedLoop = true`, `LoopCount += 1`, `ReturnDay = D25` |
+
+통과 기준:
+
+- 하연 조건은 충분하므로 `HayeonMiss`로 보내지 않는다.
+- `SohaPressure == 3`이 아니므로 소하 완전 새드엔딩이 아니라 관계 미정리 루프로 보낸다.
 
 ### TC-DDAY-003: 사고 단서 부족 실패 루프
 
@@ -194,16 +236,16 @@ return True
 
 | 영역 | 키 | 값 |
 |---|---|---|
-| BoolMap | `HayeonD2` | true |
+| BoolMap | `HasHayeonD2Premonition` | true |
 | IntMap | `HayeonTrust` | 6 |
 | IntMap | `HayeonPace` | 3 |
-| BoolMap | `SohaDone` | true |
-| BoolMap | `SeorinDone` | true |
-| BoolMap | `MiruDone` | true |
-| BoolMap | `ClueSoha` | true |
-| BoolMap | `ClueSeorin` | true |
-| BoolMap | `ClueMiru` | false |
-| BoolMap | `ClueHayeon` | false |
+| BoolMap | `IsSohaResolved` | true |
+| BoolMap | `IsSeorinResolved` | true |
+| BoolMap | `IsMiruResolved` | true |
+| BoolMap | `HasSohaClue` | true |
+| BoolMap | `HasSeorinClue` | true |
+| BoolMap | `HasMiruClue` | false |
+| BoolMap | `HasHayeonClue` | false |
 
 계산:
 
@@ -217,12 +259,12 @@ ClueScore = 2
 |---|---|
 | `EvaluateDDayResult()` | `AccFail` |
 | `NameMap["DDayResult"]` | `AccFail` |
-| `DDay_04Gate` 출력 | `DDay_10AccFail` |
+| `DDay_04Gate` 출력 | `DDay_11AccFail` |
 | 실패 처리 후 | `LoopCount += 1`, `ReturnDay = D25` |
 
 통과 기준:
 
-- `ClueScore < 3` 또는 `ClueHayeon == false`가 `AccFail`을 만든다.
+- `ClueScore < 3` 또는 `HasHayeonClue == false`가 `AccFail`을 만든다.
 - 이 실패는 하연 감정 부족이 아니라 사고 의미 미연결 실패로 분류된다.
 
 ### TC-DDAY-004: 회피 누적 실패 루프
@@ -235,16 +277,16 @@ ClueScore = 2
 
 | 영역 | 키 | 값 |
 |---|---|---|
-| BoolMap | `HayeonD2` | true |
+| BoolMap | `HasHayeonD2Premonition` | true |
 | IntMap | `HayeonTrust` | 8 |
 | IntMap | `HayeonPace` | 4 |
-| BoolMap | `SohaDone` | true |
-| BoolMap | `SeorinDone` | true |
-| BoolMap | `MiruDone` | true |
-| BoolMap | `ClueSoha` | true |
-| BoolMap | `ClueSeorin` | true |
-| BoolMap | `ClueMiru` | true |
-| BoolMap | `ClueHayeon` | true |
+| BoolMap | `IsSohaResolved` | true |
+| BoolMap | `IsSeorinResolved` | true |
+| BoolMap | `IsMiruResolved` | true |
+| BoolMap | `HasSohaClue` | true |
+| BoolMap | `HasSeorinClue` | true |
+| BoolMap | `HasMiruClue` | true |
+| BoolMap | `HasHayeonClue` | true |
 | IntMap | `Avoid` | 4 |
 
 기대 결과:
@@ -253,8 +295,8 @@ ClueScore = 2
 |---|---|
 | `EvaluateDDayResult()` | `AvoidLoop` |
 | `NameMap["DDayResult"]` | `AvoidLoop` |
-| `DDay_04Gate` 출력 | `DDay_11Avoid` |
-| 실패 처리 후 | `AvoidLoopSeen = true`, `LoopCount += 1`, `ReturnDay = D25` |
+| `DDay_04Gate` 출력 | `DDay_12Avoid` |
+| 실패 처리 후 | `HasSeenAvoidLoop = true`, `LoopCount += 1`, `ReturnDay = D25` |
 
 통과 기준:
 
@@ -271,10 +313,10 @@ ClueScore = 2
 
 | 영역 | 키 | 값 |
 |---|---|---|
-| BoolMap | `HiddenCollapse` | true |
+| BoolMap | `IsHiddenCollapseActive` | true |
 | IntMap | `HayeonTrust` | 8 |
 | IntMap | `HayeonPace` | 4 |
-| BoolMap | `ClueHayeon` | true |
+| BoolMap | `HasHayeonClue` | true |
 | IntMap | `Avoid` | 0 |
 
 기대 결과:
@@ -283,7 +325,7 @@ ClueScore = 2
 |---|---|
 | `EvaluateDDayResult()` | `HiddenCollapse` |
 | `NameMap["DDayResult"]` | `HiddenCollapse` |
-| `DDay_04Gate` 출력 | `DDay_12HiddenCollapse` |
+| `DDay_04Gate` 출력 | `DDay_13HiddenCollapse` |
 | 처리 후 | `LoopCount += 1`, `ReturnDay = D25`, `BrokenLoop` 종료 |
 
 통과 기준:
@@ -310,7 +352,7 @@ ClueScore = 2
 | 상태 | 기대값 |
 |---|---|
 | `NameMap["DDayChoice"]` | `Hayeon` |
-| `BoolMap["DDayHayeon"]` | true |
+| `BoolMap["DidChooseHayeonOnDDay"]` | true |
 | `HayeonTrust` | 기존 값보다 1 증가 |
 | 다음 | StoryFlow 기본 `Next` 핀 |
 
@@ -325,7 +367,7 @@ ClueScore = 2
 
 | 영역 | 키 | 값 |
 |---|---|---|
-| BoolMap | `HayeonBoothD1` | false |
+| BoolMap | `IsHayeonBoothD1Complete` | false |
 | IntMap | `HayeonTrust` | 4 |
 | IntMap | `HayeonPace` | 1 |
 
@@ -347,11 +389,11 @@ ClueScore = 2
 
 | Asset | 포함 Scene |
 |---|---|
-| `SF_DDayPrototype` | `DDay_01Choice`, `DDay_03Assess`, `DDay_04Gate` |
+| `SF_DDayPrototype` | `DDay_01Choice`, `DDay_03Assess`, `DDay_04Gate`, `DDay_04TrueChoice` |
 | `SF_DDayTrue` | `DDay_05True` |
-| `SF_DDayFail` | `DDay_06HayeonMiss`, `DDay_10AccFail`, `DDay_11Avoid` |
-| `SF_DDayHidden` | `DDay_12HiddenCollapse` |
-| `SF_TrueEndingStub` | `TE_00_Sat` |
+| `SF_DDayFail` | `DDay_06HayeonMiss`, `DDay_10RelationUnresolved`, `DDay_11AccFail`, `DDay_12Avoid` |
+| `SF_DDayHidden` | `DDay_13HiddenCollapse` |
+| `SF_TrueEndingStub` | `TE_00_TimeSkip` |
 
 실제 전체 장면을 모두 만들 필요는 없다. 각 Scene은 테스트에 필요한 Shot과 상태 변경만 포함한다.
 
@@ -374,7 +416,7 @@ ClueScore = 2
 - `TC-DDAY-001`부터 `TC-DDAY-005`까지 기대 Scene으로 분기한다.
 - `TC-CHOICE-001`, `TC-CHOICE-002`가 통과한다.
 - 실패 루프 케이스가 D+3로 가지 않고 D-25 복귀 상태를 만든다.
-- 진엔딩 케이스가 `TE_00_Sat`로 넘어간다.
+- 진엔딩 케이스가 `TE_00_TimeSkip`로 넘어간다.
 - 테스트에 Miyeansi 전용 키가 필요하더라도 `VisualNovelPlugin` 코드에는 하드코딩하지 않는다.
 - 모든 상태 키는 [VisualNovelPlugin 데이터 상세 설계](./VisualNovelPlugin_데이터_상세설계.md)의 짧은 PascalCase 규칙을 따른다.
 
