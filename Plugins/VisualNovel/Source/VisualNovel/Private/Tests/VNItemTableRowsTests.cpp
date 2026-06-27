@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 장윤제. All rights reserved.
+// Copyright (c) 2026 장윤제. All rights reserved.
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -31,13 +31,13 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FVNItemTableRowsMetadataTest,
 bool FVNItemTableRowsMetadataTest::RunTest(const FString& _parameters)
 {
 	FVNCharacterTableRow character_row;
-	character_row.DisplayName = FText::FromString(TEXT("하연"));
-	character_row.Description = FText::FromString(TEXT("축제와 사고 기억의 핵심 캐릭터"));
+	character_row.DisplayName = FText::FromString(TEXT("캐릭터A"));
+	character_row.Description = FText::FromString(TEXT("테스트용 캐릭터 설명"));
 	character_row.NameColor = FLinearColor::Red;
-	character_row.DialogueStyleID = TEXT("Hayeon");
+	character_row.DialogueStyleID = TEXT("OptionA");
 
-	TestEqual(TEXT("Character display name is stored"), character_row.DisplayName.ToString(), FString(TEXT("하연")));
-	TestEqual(TEXT("Character dialogue style ID is stored"), character_row.DialogueStyleID, FName(TEXT("Hayeon")));
+	TestEqual(TEXT("Character display name is stored"), character_row.DisplayName.ToString(), FString(TEXT("캐릭터A")));
+	TestEqual(TEXT("Character dialogue style ID is stored"), character_row.DialogueStyleID, FName(TEXT("OptionA")));
 	TestEqual(TEXT("Character name color is stored"), character_row.NameColor, FLinearColor::Red);
 
 	FVNFragmentTableRow fragment_row;
@@ -48,19 +48,19 @@ bool FVNItemTableRowsMetadataTest::RunTest(const FString& _parameters)
 	TestEqual(TEXT("Fragment related ending uses Ending type"), fragment_row.RelatedEndingID.GetType(), EItemType::Ending);
 
 	FVNEventTableRow event_row;
-	event_row.DefaultDayID = TEXT("DDay");
+	event_row.DefaultDayID = TEXT("EventDay");
 	event_row.DefaultSlot = EVNDaySlot::Night;
 	event_row.CategoryTags = { TEXT("Final"), TEXT("Auto") };
 
-	TestEqual(TEXT("Event default day is stored"), event_row.DefaultDayID, FName(TEXT("DDay")));
+	TestEqual(TEXT("Event default day is stored"), event_row.DefaultDayID, FName(TEXT("EventDay")));
 	TestEqual(TEXT("Event default slot is stored"), event_row.DefaultSlot, EVNDaySlot::Night);
 	TestEqual(TEXT("Event tags are stored"), event_row.CategoryTags.Num(), 2);
 
 	FVNEndingTableRow ending_row;
-	ending_row.EndingTypeID = TEXT("True");
+	ending_row.EndingTypeID = TEXT("Primary");
 	ending_row.ShouldShowInGallery = false;
 
-	TestEqual(TEXT("Ending type ID is stored"), ending_row.EndingTypeID, FName(TEXT("True")));
+	TestEqual(TEXT("Ending type ID is stored"), ending_row.EndingTypeID, FName(TEXT("Primary")));
 	TestFalse(TEXT("Ending gallery flag is stored"), ending_row.ShouldShowInGallery);
 
 	return true;

@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 장윤제. All rights reserved.
+// Copyright (c) 2026 장윤제. All rights reserved.
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -64,18 +64,18 @@ bool FVNEventHubVisibleEventsTest::RunTest(const FString& _parameters)
 {
 	using namespace VNEventHubTests;
 
-	const FName CurrentDay(TEXT("DDay"));
-	const FName RequiredFlag(TEXT("CanSeeSecret"));
+	const FName CurrentDay(TEXT("EventDay"));
+	const FName RequiredFlag(TEXT("CanSeeAdvanced"));
 
 	UVNEventSetAsset* event_set = NewObject<UVNEventSetAsset>();
-	event_set->Events.Add(MakeEvent(1, CurrentDay, EVNDaySlot::AfterSchool, 10, EVNEventRunMode::Normal, TEXT("DDay_Choice")));
-	event_set->Events.Add(MakeEvent(2, CurrentDay, EVNDaySlot::Night, 50, EVNEventRunMode::Normal, TEXT("DDay_Night")));
-	event_set->Events.Add(MakeEvent(3, CurrentDay, EVNDaySlot::None, 30, EVNEventRunMode::Normal, TEXT("DDay_Common")));
-	event_set->Events.Add(MakeEvent(4, TEXT("D1"), EVNDaySlot::AfterSchool, 40, EVNEventRunMode::Normal, TEXT("D1_Event")));
-	event_set->Events.Add(MakeEvent(5, CurrentDay, EVNDaySlot::AfterSchool, 90, EVNEventRunMode::Once, TEXT("DDay_Once")));
+	event_set->Events.Add(MakeEvent(1, CurrentDay, EVNDaySlot::AfterSchool, 10, EVNEventRunMode::Normal, TEXT("EventDay_Choice")));
+	event_set->Events.Add(MakeEvent(2, CurrentDay, EVNDaySlot::Night, 50, EVNEventRunMode::Normal, TEXT("EventDay_Night")));
+	event_set->Events.Add(MakeEvent(3, CurrentDay, EVNDaySlot::None, 30, EVNEventRunMode::Normal, TEXT("EventDay_Common")));
+	event_set->Events.Add(MakeEvent(4, TEXT("DayA"), EVNDaySlot::AfterSchool, 40, EVNEventRunMode::Normal, TEXT("DayA_Event")));
+	event_set->Events.Add(MakeEvent(5, CurrentDay, EVNDaySlot::AfterSchool, 90, EVNEventRunMode::Once, TEXT("EventDay_Once")));
 	event_set->Events.Add(MakeEvent(6, CurrentDay, EVNDaySlot::AfterSchool, 80, EVNEventRunMode::Normal, NAME_None));
 
-	FVNEventDef gated_event = MakeEvent(7, CurrentDay, EVNDaySlot::AfterSchool, 70, EVNEventRunMode::Normal, TEXT("DDay_Gated"));
+	FVNEventDef gated_event = MakeEvent(7, CurrentDay, EVNDaySlot::AfterSchool, 70, EVNEventRunMode::Normal, TEXT("EventDay_Gated"));
 	gated_event.ShowCond.All.Add(MakeBoolCondition(RequiredFlag, EVNCompareOp::Equal, true));
 	event_set->Events.Add(gated_event);
 
@@ -115,13 +115,13 @@ bool FVNEventHubAutoSelectionTest::RunTest(const FString& _parameters)
 {
 	using namespace VNEventHubTests;
 
-	const FName CurrentDay(TEXT("DDay"));
-	const FName AutoReadyKey(TEXT("AutoReady"));
+	const FName CurrentDay(TEXT("EventDay"));
+	const FName CanRunAutoKey(TEXT("CanRunAuto"));
 
 	UVNEventSetAsset* event_set = NewObject<UVNEventSetAsset>();
 	FVNEventDef low_auto = MakeEvent(1, CurrentDay, EVNDaySlot::Morning, 10, EVNEventRunMode::Auto, TEXT("Auto_Low"));
 	FVNEventDef locked_auto = MakeEvent(2, CurrentDay, EVNDaySlot::Morning, 100, EVNEventRunMode::Auto, TEXT("Auto_Locked"));
-	locked_auto.StartCond.All.Add(MakeBoolCondition(AutoReadyKey, EVNCompareOp::Equal, true));
+	locked_auto.StartCond.All.Add(MakeBoolCondition(CanRunAutoKey, EVNCompareOp::Equal, true));
 	FVNEventDef high_auto = MakeEvent(3, CurrentDay, EVNDaySlot::Morning, 50, EVNEventRunMode::Auto, TEXT("Auto_High"));
 	FVNEventDef normal_event = MakeEvent(4, CurrentDay, EVNDaySlot::Morning, 200, EVNEventRunMode::Normal, TEXT("Normal_High"));
 
@@ -139,7 +139,7 @@ bool FVNEventHubAutoSelectionTest::RunTest(const FString& _parameters)
 	TestTrue(TEXT("A startable auto event is found"), event_hub->TryFindAutoEventFromStoryState(story_state, selected_event));
 	TestEqual(TEXT("Locked high priority auto is skipped until StartCond passes"), selected_event.EventID, MakeEventID(3));
 
-	story_state.BoolMap.Add(AutoReadyKey, true);
+	story_state.BoolMap.Add(CanRunAutoKey, true);
 	TestTrue(TEXT("Auto selection still succeeds after enabling locked event"), event_hub->TryFindAutoEventFromStoryState(story_state, selected_event));
 	TestEqual(TEXT("Highest priority startable auto event is selected"), selected_event.EventID, MakeEventID(2));
 
@@ -154,18 +154,18 @@ bool FVNEventHubEventLifecycleTest::RunTest(const FString& _parameters)
 {
 	using namespace VNEventHubTests;
 
-	const FName CurrentDay(TEXT("D1"));
-	const FName ReadyKey(TEXT("CanStartCafe"));
-	const FName StartedKey(TEXT("CafeStarted"));
-	const FName TrustKey(TEXT("HayeonTrust"));
-	const FName CompleteFlag(TEXT("IsCafeComplete"));
+	const FName CurrentDay(TEXT("DayA"));
+	const FName ReadyKey(TEXT("CanStartEvent"));
+	const FName StartedKey(TEXT("EventStarted"));
+	const FName TrustKey(TEXT("TrustValue"));
+	const FName CompleteFlag(TEXT("IsEventComplete"));
 
-	FVNEventDef event_def = MakeEvent(10, CurrentDay, EVNDaySlot::AfterSchool, 30, EVNEventRunMode::Once, TEXT("Cafe_04DayOne"));
+	FVNEventDef event_def = MakeEvent(10, CurrentDay, EVNDaySlot::AfterSchool, 30, EVNEventRunMode::Once, TEXT("Event_Start"));
 	event_def.StartCond.All.Add(MakeBoolCondition(ReadyKey, EVNCompareOp::Equal, true));
 	event_def.OnStart.Add(MakeBoolChange(StartedKey, EVNStateOp::Set, true));
 	event_def.OnComplete.Add(MakeIntChange(TrustKey, EVNStateOp::Add, 1));
 	event_def.CompleteFlag = CompleteFlag;
-	event_def.NextDay = TEXT("DDay");
+	event_def.NextDay = TEXT("EventDay");
 	event_def.NextSlot = EVNDaySlot::Evening;
 
 	UGameInstance* game_instance = NewObject<UGameInstance>();
@@ -186,7 +186,7 @@ bool FVNEventHubEventLifecycleTest::RunTest(const FString& _parameters)
 	TestTrue(TEXT("Completed event is recorded in SeenEvents"), story_state.SeenEvents.Contains(MakeEventID(10)));
 	TestEqual(TEXT("OnComplete int change is applied"), story_state.IntMap.FindRef(TrustKey), 1);
 	TestTrue(TEXT("CompleteFlag is set"), story_state.BoolMap.FindRef(CompleteFlag));
-	TestEqual(TEXT("NextDay is applied"), story_state.CurrentDay, FName(TEXT("DDay")));
+	TestEqual(TEXT("NextDay is applied"), story_state.CurrentDay, FName(TEXT("EventDay")));
 	TestEqual(TEXT("NextSlot is applied"), story_state.CurrentSlot, EVNDaySlot::Evening);
 
 	TestFalse(TEXT("Once event becomes hidden after completion"), event_hub->IsEventVisibleInStoryState(event_def, story_state));
@@ -195,4 +195,3 @@ bool FVNEventHubEventLifecycleTest::RunTest(const FString& _parameters)
 }
 
 #endif // WITH_DEV_AUTOMATION_TESTS
-

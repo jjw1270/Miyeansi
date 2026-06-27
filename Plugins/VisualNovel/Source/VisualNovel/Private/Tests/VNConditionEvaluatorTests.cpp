@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 장윤제. All rights reserved.
+// Copyright (c) 2026 장윤제. All rights reserved.
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -97,15 +97,15 @@ bool FVNConditionEvaluatorPrimitiveTest::RunTest(const FString& _parameters)
 {
 	using namespace VNConditionEvaluatorTests;
 
-	const FName ResolvedKey(TEXT("IsSohaResolved"));
-	const FName TrustKey(TEXT("HayeonTrust"));
-	const FName ChoiceKey(TEXT("DDayChoice"));
+	const FName ResolvedKey(TEXT("IsRouteResolved"));
+	const FName TrustKey(TEXT("TrustValue"));
+	const FName ChoiceKey(TEXT("SelectedOption"));
 	const FName MissingKey(TEXT("MissingKey"));
 
 	FVNStoryState story_state;
 	story_state.BoolMap.Add(ResolvedKey, false);
 	story_state.IntMap.Add(TrustKey, 6);
-	story_state.NameMap.Add(ChoiceKey, TEXT("Hayeon"));
+	story_state.NameMap.Add(ChoiceKey, TEXT("OptionA"));
 
 	TestTrue(TEXT("Bool Equal false passes when stored value is false"),
 		UVNConditionEvaluator::EvaluateCondition(story_state, MakeBoolCondition(ResolvedKey, EVNCompareOp::Equal, false)));
@@ -126,9 +126,9 @@ bool FVNConditionEvaluatorPrimitiveTest::RunTest(const FString& _parameters)
 		UVNConditionEvaluator::EvaluateCondition(story_state, MakeIntCondition(MissingKey, EVNCompareOp::NotExists, 0)));
 
 	TestTrue(TEXT("Name Equal passes for the stored choice"),
-		UVNConditionEvaluator::EvaluateCondition(story_state, MakeNameCondition(ChoiceKey, EVNCompareOp::Equal, TEXT("Hayeon"))));
+		UVNConditionEvaluator::EvaluateCondition(story_state, MakeNameCondition(ChoiceKey, EVNCompareOp::Equal, TEXT("OptionA"))));
 	TestTrue(TEXT("Name NotEqual passes for a different value"),
-		UVNConditionEvaluator::EvaluateCondition(story_state, MakeNameCondition(ChoiceKey, EVNCompareOp::NotEqual, TEXT("Alone"))));
+		UVNConditionEvaluator::EvaluateCondition(story_state, MakeNameCondition(ChoiceKey, EVNCompareOp::NotEqual, TEXT("OptionB"))));
 	TestTrue(TEXT("Name Exists passes for a stored key"),
 		UVNConditionEvaluator::EvaluateCondition(story_state, MakeNameCondition(ChoiceKey, EVNCompareOp::Exists, NAME_None)));
 	TestFalse(TEXT("Empty key is rejected"),
@@ -188,9 +188,9 @@ bool FVNConditionEvaluatorConditionSetTest::RunTest(const FString& _parameters)
 {
 	using namespace VNConditionEvaluatorTests;
 
-	const FName ResolvedKey(TEXT("IsSohaResolved"));
-	const FName TrustKey(TEXT("HayeonTrust"));
-	const FName ChoiceKey(TEXT("DDayChoice"));
+	const FName ResolvedKey(TEXT("IsRouteResolved"));
+	const FName TrustKey(TEXT("TrustValue"));
+	const FName ChoiceKey(TEXT("SelectedOption"));
 	const FName AvoidKey(TEXT("Avoid"));
 	const FItemID FragmentID(EItemType::Fragment, 1, 1);
 
@@ -198,20 +198,20 @@ bool FVNConditionEvaluatorConditionSetTest::RunTest(const FString& _parameters)
 	story_state.BoolMap.Add(ResolvedKey, true);
 	story_state.IntMap.Add(TrustKey, 6);
 	story_state.IntMap.Add(AvoidKey, 1);
-	story_state.NameMap.Add(ChoiceKey, TEXT("Hayeon"));
+	story_state.NameMap.Add(ChoiceKey, TEXT("OptionA"));
 	story_state.Fragments.Add(FVNFragmentID(FragmentID));
 
 	FVNConditionSet condition_set;
 	condition_set.All.Add(MakeBoolCondition(ResolvedKey, EVNCompareOp::Equal, true));
 	condition_set.All.Add(MakeIntCondition(TrustKey, EVNCompareOp::GreaterEqual, 6));
-	condition_set.Any.Add(MakeNameCondition(ChoiceKey, EVNCompareOp::Equal, TEXT("Alone")));
+	condition_set.Any.Add(MakeNameCondition(ChoiceKey, EVNCompareOp::Equal, TEXT("OptionB")));
 	condition_set.Any.Add(MakeItemCondition(EVNStateDomain::Fragment, FragmentID, EVNCompareOp::Exists));
 	condition_set.None.Add(MakeIntCondition(AvoidKey, EVNCompareOp::GreaterEqual, 3));
 
 	TestTrue(TEXT("ConditionSet passes when All, Any, and None rules are satisfied"),
 		UVNConditionEvaluator::EvaluateConditionSet(story_state, condition_set));
 
-	condition_set.None.Add(MakeNameCondition(ChoiceKey, EVNCompareOp::Equal, TEXT("Hayeon")));
+	condition_set.None.Add(MakeNameCondition(ChoiceKey, EVNCompareOp::Equal, TEXT("OptionA")));
 	TestFalse(TEXT("ConditionSet fails when a None condition passes"),
 		UVNConditionEvaluator::EvaluateConditionSet(story_state, condition_set));
 
@@ -231,15 +231,15 @@ bool FVNConditionEvaluatorStateChangeTest::RunTest(const FString& _parameters)
 {
 	using namespace VNConditionEvaluatorTests;
 
-	const FName ResolvedKey(TEXT("IsSohaResolved"));
-	const FName TrustKey(TEXT("HayeonTrust"));
-	const FName ChoiceKey(TEXT("DDayChoice"));
+	const FName ResolvedKey(TEXT("IsRouteResolved"));
+	const FName TrustKey(TEXT("TrustValue"));
+	const FName ChoiceKey(TEXT("SelectedOption"));
 	const FItemID FragmentID(EItemType::Fragment, 1, 1);
 	const FItemID EventID(EItemType::Event, 1, 1);
 	const FItemID EndingID(EItemType::Ending, 1, 1);
 
 	FVNStoryState story_state;
-	story_state.CurrentDay = TEXT("DDay");
+	story_state.CurrentDay = TEXT("EventDay");
 
 	TestTrue(TEXT("Bool Set succeeds"),
 		UVNConditionEvaluator::ApplyStateChange(story_state, MakeBoolChange(ResolvedKey, EVNStateOp::Set, true)));
@@ -261,8 +261,8 @@ bool FVNConditionEvaluatorStateChangeTest::RunTest(const FString& _parameters)
 	TestEqual(TEXT("Int Min keeps the smaller value"), story_state.IntMap.FindRef(TrustKey), 6);
 
 	TestTrue(TEXT("Name Set succeeds"),
-		UVNConditionEvaluator::ApplyStateChange(story_state, MakeNameChange(ChoiceKey, EVNStateOp::Set, TEXT("Hayeon"))));
-	TestEqual(TEXT("Name value is stored"), story_state.NameMap.FindRef(ChoiceKey), FName(TEXT("Hayeon")));
+		UVNConditionEvaluator::ApplyStateChange(story_state, MakeNameChange(ChoiceKey, EVNStateOp::Set, TEXT("OptionA"))));
+	TestEqual(TEXT("Name value is stored"), story_state.NameMap.FindRef(ChoiceKey), FName(TEXT("OptionA")));
 
 	TestTrue(TEXT("Fragment Set true adds the fragment"),
 		UVNConditionEvaluator::ApplyStateChange(story_state, MakeItemChange(EVNStateDomain::Fragment, FragmentID, EVNStateOp::Set, true)));
@@ -283,7 +283,7 @@ bool FVNConditionEvaluatorStateChangeTest::RunTest(const FString& _parameters)
 	{
 		TestTrue(TEXT("Ending is marked as seen"), ending_state->HasBeenSeen);
 		TestEqual(TEXT("Ending seen count increases by IntValue"), ending_state->SeenCount, 2);
-		TestEqual(TEXT("Ending last seen day is current day"), ending_state->LastSeenDay, FName(TEXT("DDay")));
+		TestEqual(TEXT("Ending last seen day is current day"), ending_state->LastSeenDay, FName(TEXT("EventDay")));
 	}
 
 	TestFalse(TEXT("Empty key change is rejected"),
@@ -302,18 +302,18 @@ bool FVNConditionEvaluatorStateChangesBatchTest::RunTest(const FString& _paramet
 {
 	using namespace VNConditionEvaluatorTests;
 
-	const FName TrustKey(TEXT("HayeonTrust"));
-	const FName ChoiceKey(TEXT("DDayChoice"));
+	const FName TrustKey(TEXT("TrustValue"));
+	const FName ChoiceKey(TEXT("SelectedOption"));
 
 	FVNStoryState story_state;
 	TArray<FVNStateChange> state_changes;
 	state_changes.Add(MakeIntChange(TrustKey, EVNStateOp::Set, 5));
 	state_changes.Add(MakeIntChange(TrustKey, EVNStateOp::Add, 2));
-	state_changes.Add(MakeNameChange(ChoiceKey, EVNStateOp::Set, TEXT("Hayeon")));
+	state_changes.Add(MakeNameChange(ChoiceKey, EVNStateOp::Set, TEXT("OptionA")));
 
 	TestTrue(TEXT("Valid batch reports success"), UVNConditionEvaluator::ApplyStateChanges(story_state, state_changes));
 	TestEqual(TEXT("Batch applies changes in order"), story_state.IntMap.FindRef(TrustKey), 7);
-	TestEqual(TEXT("Batch applies name change"), story_state.NameMap.FindRef(ChoiceKey), FName(TEXT("Hayeon")));
+	TestEqual(TEXT("Batch applies name change"), story_state.NameMap.FindRef(ChoiceKey), FName(TEXT("OptionA")));
 
 	state_changes.Add(MakeBoolChange(NAME_None, EVNStateOp::Set, true));
 	TestFalse(TEXT("Batch reports failure when any change is invalid"), UVNConditionEvaluator::ApplyStateChanges(story_state, state_changes));

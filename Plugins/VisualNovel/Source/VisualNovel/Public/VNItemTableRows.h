@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 장윤제. All rights reserved.
+// Copyright (c) 2026 장윤제. All rights reserved.
 
 #pragma once
 
@@ -92,7 +92,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (MultiLine = true, ToolTip = "엔딩 설명, 갤러리 표시 문구, 제작 메모"))
 	FText Description;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (ToolTip = "True/Sad/Loop/Hidden 같은 프로젝트별 엔딩 분류 ID"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (ToolTip = "Primary/Sad/Loop/Hidden 같은 프로젝트별 엔딩 분류 ID"))
 	FName EndingTypeID = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (ToolTip = "갤러리 대표 이미지 또는 썸네일 리소스 ID"))

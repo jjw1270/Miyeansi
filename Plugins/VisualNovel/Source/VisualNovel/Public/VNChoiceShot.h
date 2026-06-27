@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 장윤제. All rights reserved.
+// Copyright (c) 2026 장윤제. All rights reserved.
 
 #pragma once
 
@@ -15,7 +15,7 @@ struct VISUALNOVEL_API FVNChoiceOption
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (ToolTip = "선택 결과 ID. 예: Hayeon, Alone, Stay"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (ToolTip = "선택 결과 ID. 예: OptionA, OptionB, Stay"))
 	FName ChoiceID = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (ToolTip = "플레이어에게 표시할 선택지 문구"))

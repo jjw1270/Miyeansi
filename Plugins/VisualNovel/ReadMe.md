@@ -321,7 +321,7 @@ Source/VisualNovel/Private/Tests
 - Dialogue/Choice Shot은 UI 위젯 브리지 전 단계이며, 현재는 라인/선택 상태 흐름 API까지만 제공한다.
 - `UVNConditionBranch`는 현재 `UVNStoryStateSubsystem`의 메모리 상태만 읽는다.
 - Branch는 StoryFlow 정책에 따라 순간 판단 단계이며, Branch 자체를 저장 대상으로 보지 않는다.
-- Miyeansi 전용 키나 루트 조건은 플러그인 코드에 하드코딩하지 않고 DataAsset/Blueprint/프로젝트 코드에서 주입해야 한다.
+- Miyeansi 전용 키나 루트 조건은 플러그인 코드와 플러그인 자동화 테스트에 하드코딩하지 않고 DataAsset/Blueprint/프로젝트 코드에서 주입해야 한다.
 
 ---
 

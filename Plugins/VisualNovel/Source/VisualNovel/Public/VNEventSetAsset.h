@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 장윤제. All rights reserved.
+// Copyright (c) 2026 장윤제. All rights reserved.
 
 #pragma once
 
@@ -23,7 +23,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (ToolTip = "허브 목록, 디버그, 제작 검수 화면에 표시할 이벤트 이름"))
 	FText DisplayName;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (ToolTip = "이벤트가 배치되는 날짜 ID. 예: D25, D1, DDay"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (ToolTip = "이벤트가 배치되는 날짜 ID. 예: DayA, DayB, EventDay"))
 	FName DayID = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (ToolTip = "이벤트가 배치되는 하루 슬롯. None은 자동 컷신/공통 이벤트 또는 슬롯 무관 이벤트로 사용"))

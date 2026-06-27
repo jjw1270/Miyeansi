@@ -14,7 +14,7 @@ struct VISUALNOVEL_API FVNCharState
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (Tooltip = "일반 호감/친밀도. 진엔딩 조건 자체보다 관계 온도 표현에 사용"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (Tooltip = "일반 호감/친밀도. 핵심 엔딩 조건 자체보다 관계 온도 표현에 사용"))
 	int32 Affinity = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (Tooltip = "핵심 신뢰도. 캐릭터별 주요 선택과 진전 조건에 사용"))
@@ -58,10 +58,10 @@ struct VISUALNOVEL_API FVNStoryState
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (Tooltip = "현재 날짜 ID. 예: D25, D1, DDay, DPlus2"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (Tooltip = "현재 날짜 ID. 예: DayA, DayB, EventDay, EpilogueDay"))
 	FName CurrentDay = NAME_None;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (Tooltip = "현재 주차 또는 구간 ID. 예: Week1, FinalWeek, TrueEnding"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (Tooltip = "현재 주차 또는 구간 ID. 예: WeekA, FinalWeek, EndingWeek"))
 	FName CurrentWeek = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (Tooltip = "현재 하루 행동 슬롯. 이벤트 허브와 선택 가능 이벤트 판정에 사용"))

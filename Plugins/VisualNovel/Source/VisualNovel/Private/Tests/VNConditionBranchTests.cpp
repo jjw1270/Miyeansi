@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 장윤제. All rights reserved.
+// Copyright (c) 2026 장윤제. All rights reserved.
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -58,8 +58,8 @@ bool FVNConditionBranchOutputTest::RunTest(const FString& _parameters)
 
 	UVNConditionBranch* branch = NewObject<UVNConditionBranch>();
 	TArray<FVNConditionBranchCase> cases;
-	cases.Add(MakeCase(TEXT("Low Trust"), MakeIntCondition(TEXT("HayeonTrust"), EVNCompareOp::Less, 3)));
-	cases.Add(MakeCase(TEXT("True Route"), MakeBoolCondition(TEXT("HasTrueRoute"), EVNCompareOp::Equal, true)));
+	cases.Add(MakeCase(TEXT("Low Score"), MakeIntCondition(TEXT("TrustValue"), EVNCompareOp::Less, 3)));
+	cases.Add(MakeCase(TEXT("Route Success"), MakeBoolCondition(TEXT("HasRoute"), EVNCompareOp::Equal, true)));
 	branch->SetCases(cases);
 	branch->SetDefaultOutputName(FText::FromString(TEXT("Fallback")));
 
@@ -67,8 +67,8 @@ bool FVNConditionBranchOutputTest::RunTest(const FString& _parameters)
 	TestEqual(TEXT("Branch outputs are rebuilt from cases plus default"), outputs.Num(), 3);
 	if (outputs.Num() == 3)
 	{
-		TestEqual(TEXT("First case output name is preserved"), outputs[0].DisplayName.ToString(), FString(TEXT("Low Trust")));
-		TestEqual(TEXT("Second case output name is preserved"), outputs[1].DisplayName.ToString(), FString(TEXT("True Route")));
+		TestEqual(TEXT("First case output name is preserved"), outputs[0].DisplayName.ToString(), FString(TEXT("Low Score")));
+		TestEqual(TEXT("Second case output name is preserved"), outputs[1].DisplayName.ToString(), FString(TEXT("Route Success")));
 		TestEqual(TEXT("Default output is last"), outputs[2].DisplayName.ToString(), FString(TEXT("Fallback")));
 	}
 	TestEqual(TEXT("Default output index is case count"), branch->GetDefaultOutputIndex(), 2);
@@ -84,14 +84,14 @@ bool FVNConditionBranchSelectionTest::RunTest(const FString& _parameters)
 {
 	using namespace VNConditionBranchTests;
 
-	const FName TrustKey(TEXT("HayeonTrust"));
-	const FName ResolvedKey(TEXT("IsSohaResolved"));
+	const FName TrustKey(TEXT("TrustValue"));
+	const FName ResolvedKey(TEXT("IsRouteResolved"));
 
 	UVNConditionBranch* branch = NewObject<UVNConditionBranch>();
 	TArray<FVNConditionBranchCase> cases;
-	cases.Add(MakeCase(TEXT("Low Trust"), MakeIntCondition(TrustKey, EVNCompareOp::Less, 3)));
-	cases.Add(MakeCase(TEXT("Enough Trust"), MakeIntCondition(TrustKey, EVNCompareOp::GreaterEqual, 6)));
-	cases.Add(MakeCase(TEXT("Soha Resolved"), MakeBoolCondition(ResolvedKey, EVNCompareOp::Equal, true)));
+	cases.Add(MakeCase(TEXT("Low Score"), MakeIntCondition(TrustKey, EVNCompareOp::Less, 3)));
+	cases.Add(MakeCase(TEXT("Enough Score"), MakeIntCondition(TrustKey, EVNCompareOp::GreaterEqual, 6)));
+	cases.Add(MakeCase(TEXT("Route Resolved"), MakeBoolCondition(ResolvedKey, EVNCompareOp::Equal, true)));
 	branch->SetCases(cases);
 
 	FVNStoryState story_state;
@@ -140,7 +140,7 @@ bool FVNStoryStateSubsystemTest::RunTest(const FString& _parameters)
 {
 	using namespace VNConditionBranchTests;
 
-	const FName TrustKey(TEXT("HayeonTrust"));
+	const FName TrustKey(TEXT("TrustValue"));
 
 	UGameInstance* game_instance = NewObject<UGameInstance>();
 	UVNStoryStateSubsystem* story_state_subsystem = NewObject<UVNStoryStateSubsystem>(game_instance);
