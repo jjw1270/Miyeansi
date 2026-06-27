@@ -12,10 +12,10 @@
 UENUM(BlueprintType, meta = (ShortToolTip = "VN 대사 줄 종류"))
 enum class EVNDialogueLineKind : uint8
 {
-	Dialogue		UMETA(ToolTip = "캐릭터 이름이 표시되는 일반 대사"),
-	Narration	UMETA(ToolTip = "이름 없이 출력되는 지문 또는 내레이션"),
-	Monologue	UMETA(ToolTip = "주인공 독백"),
-	System		UMETA(ToolTip = "날짜 전환, 안내, 디버그용 시스템 문구"),
+	Dialogue					UMETA(ToolTip = "캐릭터 이름이 표시되는 일반 대사"),
+	Narration				UMETA(ToolTip = "이름 없이 출력되는 지문 또는 내레이션"),
+	Monologue				UMETA(ToolTip = "주인공 독백"),
+	System					UMETA(ToolTip = "날짜 전환, 안내, 디버그용 시스템 문구"),
 };
 
 USTRUCT(BlueprintType, meta = (ShortToolTip = "한 줄 동안 표시할 캐릭터 연출 큐"))
@@ -28,7 +28,7 @@ public:
 	FVNCharacterID CharacterID;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (ToolTip = "표정/의상/포즈 같은 캐릭터 스프라이트 리소스 ID"))
-	FVNItemID CharacterSpriteID = FItemID::Zero;
+	FItemID CharacterSpriteID = FItemID::Zero;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (ToolTip = "화면 배치 위치 ID. 예: Left, Center, Right"))
 	FName PositionID = NAME_None;
@@ -56,13 +56,13 @@ public:
 	FText Text;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (ToolTip = "이 줄에서 전환할 배경 리소스 ID. 비우면 유지"))
-	FVNItemID BackgroundID = FItemID::Zero;
+	FItemID BackgroundID = FItemID::Zero;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (ToolTip = "이 줄에서 전환할 BGM 리소스 ID. 비우면 유지"))
-	FVNItemID BgmID = FItemID::Zero;
+	FItemID BgmID = FItemID::Zero;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (ToolTip = "이 줄에서 재생할 효과음 리소스 ID"))
-	FVNItemID SfxID = FItemID::Zero;
+	FItemID SfxID = FItemID::Zero;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (ToolTip = "이 줄에서 화면에 표시할 캐릭터 큐 목록"))
 	TArray<FVNCharacterCue> Characters;

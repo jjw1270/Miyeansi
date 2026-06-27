@@ -41,7 +41,7 @@ namespace VNConditionEvaluatorTests
 	{
 		FVNCondition condition;
 		condition.Domain = _domain;
-		condition.ItemID = FVNItemID(_item_id);
+		condition.ItemID = _item_id;
 		condition.Op = _op;
 		condition.BoolValue = _value;
 		return condition;
@@ -81,7 +81,7 @@ namespace VNConditionEvaluatorTests
 	{
 		FVNStateChange state_change;
 		state_change.Domain = _domain;
-		state_change.ItemID = FVNItemID(_item_id);
+		state_change.ItemID = _item_id;
 		state_change.Op = _op;
 		state_change.BoolValue = _bool_value;
 		state_change.IntValue = _int_value;

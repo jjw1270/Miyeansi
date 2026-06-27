@@ -20,8 +20,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (ToolTip = "대사창 이름, 포커스 UI 등에 사용할 기본 색상"))
 	FLinearColor NameColor = FLinearColor::White;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (ToolTip = "기본 스탠딩/표정 리소스 ID. 전용 ItemType 확정 전까지 범용 VN ItemID로 보관"))
-	FVNItemID DefaultSpriteID = FItemID::Zero;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (ToolTip = "기본 스탠딩/표정 리소스 ID. 전용 ItemType 확정 전까지 범용 FItemID로 보관"))
+	FItemID DefaultSpriteID = FItemID::Zero;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (ToolTip = "대사창/음성/텍스트 스타일을 프로젝트 데이터에서 찾기 위한 스타일 ID"))
 	FName DialogueStyleID = NAME_None;
@@ -43,7 +43,7 @@ public:
 	FText Description;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (ToolTip = "도감/선택지 UI에서 사용할 아이콘 리소스 ID"))
-	FVNItemID IconID = FItemID::Zero;
+	FItemID IconID = FItemID::Zero;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (ToolTip = "이 단서와 관련된 캐릭터 ID"))
 	FVNCharacterID RelatedCharacterID;
@@ -96,7 +96,7 @@ public:
 	FName EndingTypeID = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (ToolTip = "갤러리 대표 이미지 또는 썸네일 리소스 ID"))
-	FVNItemID RepresentativeImageID = FItemID::Zero;
+	FItemID RepresentativeImageID = FItemID::Zero;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (ToolTip = "엔딩 갤러리/회상 목록에 표시할지 여부"))
 	bool ShouldShowInGallery = true;

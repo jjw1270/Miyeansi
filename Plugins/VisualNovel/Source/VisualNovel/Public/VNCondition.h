@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 장윤제. All rights reserved.
+// Copyright (c) 2026 장윤제. All rights reserved.
 
 #pragma once
 
@@ -19,8 +19,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (Tooltip = "Bool, Int, Name 도메인에서 검사할 상태 키"))
 	FName Key = NAME_None;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (Tooltip = "Fragment, SeenEvent, Ending 도메인에서 검사할 VN ItemID"))
-	FVNItemID ItemID = FItemID::Zero;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (Tooltip = "Fragment, SeenEvent, Ending 도메인에서 검사할 ItemID"))
+	FItemID ItemID = FItemID::Zero;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (Tooltip = "조건 비교 방식. Equal/Greater/Exists 등 도메인에 맞는 연산을 선택"))
 	EVNCompareOp Op = EVNCompareOp::Equal;

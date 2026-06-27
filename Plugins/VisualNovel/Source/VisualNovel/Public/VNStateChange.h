@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 장윤제. All rights reserved.
+// Copyright (c) 2026 장윤제. All rights reserved.
 
 #pragma once
 
@@ -19,8 +19,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (Tooltip = "Bool, Int, Name 도메인에서 변경할 상태 키"))
 	FName Key = NAME_None;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (Tooltip = "Fragment, SeenEvent, Ending 도메인에서 변경할 VN ItemID"))
-	FVNItemID ItemID = FItemID::Zero;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (Tooltip = "Fragment, SeenEvent, Ending 도메인에서 변경할 ItemID"))
+	FItemID ItemID = FItemID::Zero;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VisualNovel", meta = (Tooltip = "상태 변경 방식. Set/Add/Remove/Max/Min 중 선택"))
 	EVNStateOp Op = EVNStateOp::Set;
