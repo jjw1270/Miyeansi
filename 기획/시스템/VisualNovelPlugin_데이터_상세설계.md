@@ -560,20 +560,20 @@ public:
 `UVNConditionBranch` 출력 핀은 항상 아래 순서를 따른다.
 
 ```text
-Cases[0]
-Cases[1]
-Cases[2]
+_Cases[0]
+_Cases[1]
+_Cases[2]
 ...
 Default
 ```
 
 평가 규칙:
 
-1. `Cases`를 위에서부터 순서대로 평가한다.
+1. `_Cases`를 위에서부터 순서대로 평가한다.
 2. 처음 통과한 Case의 배열 인덱스를 StoryFlow 출력 인덱스로 반환한다.
 3. 어떤 Case도 통과하지 못하면 마지막 `Default` 출력으로 보낸다.
 4. `UVNStoryStateSubsystem`을 찾지 못한 경우도 `Default`로 보낸다.
-5. `Cases`나 `DefaultOutputName`이 바뀌면 Branch 출력 목록을 다시 구성한다.
+5. `_Cases`나 `_DefaultOutputName`이 바뀌면 Branch 출력 목록을 다시 구성한다.
 
 ## 10. VN Shot 입력 필드
 
@@ -713,35 +713,35 @@ class VISUALNOVEL_API UVNDialogueShot : public UStoryShotBase
 {
 	GENERATED_BODY()
 
-protected:
+private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
-	TArray<FVNDialogueLine> Lines;
+	TArray<FVNDialogueLine> _Lines;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
-	TArray<FVNStateChange> OnEnter;
+	TArray<FVNStateChange> _OnEnter;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
-	TArray<FVNStateChange> OnComplete;
+	TArray<FVNStateChange> _OnComplete;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
-	bool ShouldWaitForInput = true;
+	bool _ShouldWaitForInput = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
-	bool ShouldAddToBacklog = true;
+	bool _ShouldAddToBacklog = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
-	float AutoAdvanceDelay = 0.0f;
+	float _AutoAdvanceDelay = 0.0f;
 };
 ```
 
 | 필드 | 기본값 | 설명 |
 |---|---|---|
-| `Lines` | empty | 출력할 대사 줄 목록. 최소 1개 필요 |
-| `OnEnter` | empty | Shot 시작 시 1회 적용할 상태 변경 |
-| `OnComplete` | empty | 모든 줄을 넘긴 뒤 적용할 상태 변경 |
-| `ShouldWaitForInput` | true | true면 플레이어 입력으로 다음 줄 진행 |
-| `ShouldAddToBacklog` | true | true면 대사 로그에 기록 |
-| `AutoAdvanceDelay` | 0.0 | 0보다 크면 입력 없이 지정 시간 뒤 진행. 암전/짧은 연출에 사용 |
+| `_Lines` | empty | 출력할 대사 줄 목록. 최소 1개 필요 |
+| `_OnEnter` | empty | Shot 시작 시 1회 적용할 상태 변경 |
+| `_OnComplete` | empty | 모든 줄을 넘긴 뒤 적용할 상태 변경 |
+| `_ShouldWaitForInput` | true | true면 플레이어 입력으로 다음 줄 진행 |
+| `_ShouldAddToBacklog` | true | true면 대사 로그에 기록 |
+| `_AutoAdvanceDelay` | 0.0 | 0보다 크면 입력 없이 지정 시간 뒤 진행. 암전/짧은 연출에 사용 |
 
 ### 10.6 FVNChoiceOption
 
@@ -789,42 +789,42 @@ class VISUALNOVEL_API UVNChoiceShot : public UStoryShotBase
 {
 	GENERATED_BODY()
 
-protected:
+private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
-	FText PromptText;
+	FText _PromptText;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
-	FName ResultKey = NAME_None;
+	FName _ResultKey = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
-	TArray<FVNChoiceOption> Options;
+	TArray<FVNChoiceOption> _Options;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
-	TArray<FVNStateChange> OnEnter;
+	TArray<FVNStateChange> _OnEnter;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
-	TArray<FVNStateChange> OnComplete;
+	TArray<FVNStateChange> _OnComplete;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="VisualNovel")
-	bool ShouldAutoSelectSingleOption = false;
+	bool _ShouldAutoSelectSingleOption = false;
 };
 ```
 
 | 필드 | 기본값 | 설명 |
 |---|---|---|
-| `PromptText` | empty | 선택지 위에 표시할 질문/상황 문구 |
-| `ResultKey` | None | 선택한 `ChoiceID`를 `NameMap`에 저장할 키. 예: `DDayChoice` |
-| `Options` | empty | 선택지 목록. 최소 1개 필요 |
-| `OnEnter` | empty | 선택지 표시 전에 적용할 상태 변경 |
-| `OnComplete` | empty | 선택 완료 뒤 공통 적용할 상태 변경 |
-| `ShouldAutoSelectSingleOption` | false | 표시 가능한 선택지가 1개뿐일 때 자동 선택할지 여부 |
+| `_PromptText` | empty | 선택지 위에 표시할 질문/상황 문구 |
+| `_ResultKey` | None | 선택한 `ChoiceID`를 `NameMap`에 저장할 키. 예: `DDayChoice` |
+| `_Options` | empty | 선택지 목록. 최소 1개 필요 |
+| `_OnEnter` | empty | 선택지 표시 전에 적용할 상태 변경 |
+| `_OnComplete` | empty | 선택 완료 뒤 공통 적용할 상태 변경 |
+| `_ShouldAutoSelectSingleOption` | false | 표시 가능한 선택지가 1개뿐일 때 자동 선택할지 여부 |
 
 선택 처리 순서:
 
 1. `OnEnter`를 적용한다.
 2. `ShowCond`를 통과한 선택지만 목록에 만든다.
 3. `EnableCond`를 통과하지 못한 선택지는 비활성으로 보여준다.
-4. 플레이어가 선택하면 `ResultKey`가 비어 있지 않은 경우 `NameMap[ResultKey] = ChoiceID`를 저장한다.
+4. 플레이어가 선택하면 `_ResultKey`가 비어 있지 않은 경우 `NameMap[_ResultKey] = ChoiceID`를 저장한다.
 5. 선택지의 `OnSelect`를 적용한다.
 6. Shot의 `OnComplete`를 적용한다.
 7. StoryFlow 기본 `Next` 핀으로 진행한다.
@@ -833,8 +833,8 @@ protected:
 
 | 필드 | 값 |
 |---|---|
-| `PromptText` | 오늘 축제를 누구와 둘러볼까? |
-| `ResultKey` | `DDayChoice` |
+| `_PromptText` | 오늘 축제를 누구와 둘러볼까? |
+| `_ResultKey` | `DDayChoice` |
 | `Options[0].ChoiceID` | `Hayeon` |
 | `Options[0].Text` | 하연을 찾는다 |
 | `Options[0].ShowCond` | `IsHayeonBoothD1Complete == true` |
@@ -868,7 +868,7 @@ class VISUALNOVEL_API UVNEventSetAsset : public UDataAsset
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TArray<FVNEventDef> Events;
+	TArray<FVNEventDef> _Events;
 };
 ```
 
@@ -1041,7 +1041,7 @@ public:
 | DialogueShot 빈 줄 | `UVNDialogueShot.Lines`가 비어 있거나, `Text`와 연출/상태 변경이 모두 비어 있는 줄이 있음 |
 | ChoiceShot 선택지 없음 | `UVNChoiceShot.Options`가 비어 있거나 `ShowCond` 통과 후 표시 가능한 선택지가 없음 |
 | ChoiceID 중복 | 같은 `UVNChoiceShot` 안에 동일 `ChoiceID`가 2개 이상 |
-| Choice 결과 키 누락 | 선택 결과로 분기해야 하는 `UVNChoiceShot`인데 `ResultKey`가 비어 있음 |
+| Choice 결과 키 누락 | 선택 결과로 분기해야 하는 `UVNChoiceShot`인데 `_ResultKey`가 비어 있음 |
 | 자동 이벤트 충돌 | 같은 날짜/슬롯에 `Auto`가 여러 개이고 Priority도 같음 |
 | 완료 후 이동 없음 | 허브로 돌아갈 수 없는 이벤트가 `NextSlot`/Transition을 모두 제공하지 않음 |
 | D-Day 결과 누락 | `DDay_04Gate`가 처리할 결과 SceneID가 없음 |

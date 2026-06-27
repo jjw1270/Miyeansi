@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 장윤제. All rights reserved.
+// Copyright (c) 2026 장윤제. All rights reserved.
 
 #include "VNEventHubSubsystem.h"
 
@@ -59,7 +59,7 @@ TArray<FVNEventDef> UVNEventHubSubsystem::GetVisibleEventsFromStoryState(const F
 			continue;
 		}
 
-		for (const FVNEventDef& event_def : event_set->Events)
+		for (const FVNEventDef& event_def : event_set->_Events)
 		{
 			if (IsEventVisibleInStoryState(event_def, _story_state))
 			{

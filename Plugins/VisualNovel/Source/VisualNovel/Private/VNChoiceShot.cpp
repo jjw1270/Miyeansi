@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 장윤제. All rights reserved.
+// Copyright (c) 2026 장윤제. All rights reserved.
 
 #include "VNChoiceShot.h"
 
@@ -19,9 +19,9 @@ void UVNChoiceShot::OnEnterShot_Implementation()
 TArray<FVNChoiceOptionState> UVNChoiceShot::GetVisibleOptionsFromStoryState(const FVNStoryState& _story_state) const
 {
 	TArray<FVNChoiceOptionState> visible_options;
-	for (int32 option_index = 0; option_index < Options.Num(); ++option_index)
+	for (int32 option_index = 0; option_index < _Options.Num(); ++option_index)
 	{
-		const FVNChoiceOption& option = Options[option_index];
+		const FVNChoiceOption& option = _Options[option_index];
 		if (IsOptionVisible(_story_state, option) == false)
 		{
 			continue;
@@ -44,7 +44,7 @@ bool UVNChoiceShot::BeginChoiceInStoryState(FVNStoryState& _story_state)
 	_HasSelected = false;
 	_SelectedChoiceID = NAME_None;
 
-	return UVNConditionEvaluator::ApplyStateChanges(_story_state, OnEnter);
+	return UVNConditionEvaluator::ApplyStateChanges(_story_state, _OnEnter);
 }
 
 bool UVNChoiceShot::SelectOption(int32 _option_index)
@@ -54,30 +54,30 @@ bool UVNChoiceShot::SelectOption(int32 _option_index)
 
 bool UVNChoiceShot::SelectOptionInStoryState(int32 _option_index, FVNStoryState& _story_state)
 {
-	if (_HasSelected || Options.IsValidIndex(_option_index) == false)
+	if (_HasSelected || _Options.IsValidIndex(_option_index) == false)
 	{
 		return false;
 	}
 
-	const FVNChoiceOption& option = Options[_option_index];
+	const FVNChoiceOption& option = _Options[_option_index];
 	if (IsOptionVisible(_story_state, option) == false || IsOptionEnabled(_story_state, option) == false)
 	{
 		return false;
 	}
 
 	bool is_applied = true;
-	if (ResultKey.IsNone() == false)
+	if (_ResultKey.IsNone() == false)
 	{
 		FVNStateChange result_change;
 		result_change.Domain = EVNStateDomain::Name;
-		result_change.Key = ResultKey;
+		result_change.Key = _ResultKey;
 		result_change.Op = EVNStateOp::Set;
 		result_change.NameValue = option.ChoiceID;
 		is_applied &= UVNConditionEvaluator::ApplyStateChange(_story_state, result_change);
 	}
 
 	is_applied &= UVNConditionEvaluator::ApplyStateChanges(_story_state, option.OnSelect);
-	is_applied &= UVNConditionEvaluator::ApplyStateChanges(_story_state, OnComplete);
+	is_applied &= UVNConditionEvaluator::ApplyStateChanges(_story_state, _OnComplete);
 
 	_HasSelected = true;
 	_SelectedChoiceID = option.ChoiceID;
@@ -86,9 +86,9 @@ bool UVNChoiceShot::SelectOptionInStoryState(int32 _option_index, FVNStoryState&
 
 bool UVNChoiceShot::SelectOptionByChoiceID(FName _choice_id)
 {
-	for (int32 option_index = 0; option_index < Options.Num(); ++option_index)
+	for (int32 option_index = 0; option_index < _Options.Num(); ++option_index)
 	{
-		if (Options[option_index].ChoiceID == _choice_id)
+		if (_Options[option_index].ChoiceID == _choice_id)
 		{
 			return SelectOption(option_index);
 		}
@@ -99,9 +99,9 @@ bool UVNChoiceShot::SelectOptionByChoiceID(FName _choice_id)
 
 bool UVNChoiceShot::SelectOptionByChoiceIDInStoryState(FName _choice_id, FVNStoryState& _story_state)
 {
-	for (int32 option_index = 0; option_index < Options.Num(); ++option_index)
+	for (int32 option_index = 0; option_index < _Options.Num(); ++option_index)
 	{
-		if (Options[option_index].ChoiceID == _choice_id)
+		if (_Options[option_index].ChoiceID == _choice_id)
 		{
 			return SelectOptionInStoryState(option_index, _story_state);
 		}
@@ -117,15 +117,15 @@ bool UVNChoiceShot::ApplyOnEnterToSubsystem() const
 	UVNStoryStateSubsystem* story_state_subsystem = IsValid(game_instance) ? game_instance->GetSubsystem<UVNStoryStateSubsystem>() : nullptr;
 	if (IsValid(story_state_subsystem) == false)
 	{
-		return OnEnter.IsEmpty();
+		return _OnEnter.IsEmpty();
 	}
 
-	return story_state_subsystem->ApplyStateChanges(OnEnter);
+	return story_state_subsystem->ApplyStateChanges(_OnEnter);
 }
 
 bool UVNChoiceShot::SelectSingleVisibleOptionIfNeeded()
 {
-	if (ShouldAutoSelectSingleOption == false)
+	if (_ShouldAutoSelectSingleOption == false)
 	{
 		return false;
 	}

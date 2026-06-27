@@ -84,27 +84,27 @@ bool FVNConditionBranchSelectionTest::RunTest(const FString& _parameters)
 {
 	using namespace VNConditionBranchTests;
 
-	const FName TrustKey(TEXT("TrustValue"));
-	const FName ResolvedKey(TEXT("IsRouteResolved"));
+	const FName trust_key(TEXT("TrustValue"));
+	const FName resolved_key(TEXT("IsRouteResolved"));
 
 	UVNConditionBranch* branch = NewObject<UVNConditionBranch>();
 	TArray<FVNConditionBranchCase> cases;
-	cases.Add(MakeCase(TEXT("Low Score"), MakeIntCondition(TrustKey, EVNCompareOp::Less, 3)));
-	cases.Add(MakeCase(TEXT("Enough Score"), MakeIntCondition(TrustKey, EVNCompareOp::GreaterEqual, 6)));
-	cases.Add(MakeCase(TEXT("Route Resolved"), MakeBoolCondition(ResolvedKey, EVNCompareOp::Equal, true)));
+	cases.Add(MakeCase(TEXT("Low Score"), MakeIntCondition(trust_key, EVNCompareOp::Less, 3)));
+	cases.Add(MakeCase(TEXT("Enough Score"), MakeIntCondition(trust_key, EVNCompareOp::GreaterEqual, 6)));
+	cases.Add(MakeCase(TEXT("Route Resolved"), MakeBoolCondition(resolved_key, EVNCompareOp::Equal, true)));
 	branch->SetCases(cases);
 
 	FVNStoryState story_state;
-	story_state.IntMap.Add(TrustKey, 6);
-	story_state.BoolMap.Add(ResolvedKey, true);
+	story_state.IntMap.Add(trust_key, 6);
+	story_state.BoolMap.Add(resolved_key, true);
 
 	TestEqual(TEXT("First matching case wins"), branch->SelectNextIndexFromStoryState(story_state, 4), 1);
 
-	story_state.IntMap[TrustKey] = 1;
+	story_state.IntMap[trust_key] = 1;
 	TestEqual(TEXT("Earlier matching case is selected"), branch->SelectNextIndexFromStoryState(story_state, 4), 0);
 
-	story_state.IntMap[TrustKey] = 4;
-	story_state.BoolMap[ResolvedKey] = false;
+	story_state.IntMap[trust_key] = 4;
+	story_state.BoolMap[resolved_key] = false;
 	TestEqual(TEXT("Default output is selected when no case passes"), branch->SelectNextIndexFromStoryState(story_state, 4), 3);
 
 	TestEqual(TEXT("Default index is clamped to available next count"), branch->SelectNextIndexFromStoryState(story_state, 2), 1);
@@ -140,7 +140,7 @@ bool FVNStoryStateSubsystemTest::RunTest(const FString& _parameters)
 {
 	using namespace VNConditionBranchTests;
 
-	const FName TrustKey(TEXT("TrustValue"));
+	const FName trust_key(TEXT("TrustValue"));
 
 	UGameInstance* game_instance = NewObject<UGameInstance>();
 	UVNStoryStateSubsystem* story_state_subsystem = NewObject<UVNStoryStateSubsystem>(game_instance);
@@ -151,15 +151,15 @@ bool FVNStoryStateSubsystemTest::RunTest(const FString& _parameters)
 	}
 
 	FVNStoryState story_state;
-	story_state.IntMap.Add(TrustKey, 3);
+	story_state.IntMap.Add(trust_key, 3);
 	story_state_subsystem->SetStoryState(story_state);
-	TestEqual(TEXT("SetStoryState stores the state"), story_state_subsystem->GetStoryStateRef().IntMap.FindRef(TrustKey), 3);
+	TestEqual(TEXT("SetStoryState stores the state"), story_state_subsystem->GetStoryStateRef().IntMap.FindRef(trust_key), 3);
 
-	TestTrue(TEXT("Subsystem applies a state change"), story_state_subsystem->ApplyStateChange(MakeIntChange(TrustKey, EVNStateOp::Add, 2)));
-	TestEqual(TEXT("State change modifies the stored state"), story_state_subsystem->GetStoryStateRef().IntMap.FindRef(TrustKey), 5);
+	TestTrue(TEXT("Subsystem applies a state change"), story_state_subsystem->ApplyStateChange(MakeIntChange(trust_key, EVNStateOp::Add, 2)));
+	TestEqual(TEXT("State change modifies the stored state"), story_state_subsystem->GetStoryStateRef().IntMap.FindRef(trust_key), 5);
 
 	story_state_subsystem->ResetStoryState();
-	TestFalse(TEXT("ResetStoryState clears previous state"), story_state_subsystem->GetStoryStateRef().IntMap.Contains(TrustKey));
+	TestFalse(TEXT("ResetStoryState clears previous state"), story_state_subsystem->GetStoryStateRef().IntMap.Contains(trust_key));
 
 	return true;
 }

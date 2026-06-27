@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 장윤제. All rights reserved.
+// Copyright (c) 2026 장윤제. All rights reserved.
 
 #pragma once
 
@@ -78,22 +78,22 @@ class VISUALNOVEL_API UVNDialogueShot : public UStoryShotBase
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (AllowPrivateAccess = "true", ToolTip = "출력할 대사 줄 목록. 최소 1개 권장"))
-	TArray<FVNDialogueLine> Lines;
+	TArray<FVNDialogueLine> _Lines;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (AllowPrivateAccess = "true", ToolTip = "Shot 시작 시 1회 적용할 상태 변경"))
-	TArray<FVNStateChange> OnEnter;
+	TArray<FVNStateChange> _OnEnter;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (AllowPrivateAccess = "true", ToolTip = "모든 줄을 넘긴 뒤 적용할 상태 변경"))
-	TArray<FVNStateChange> OnComplete;
+	TArray<FVNStateChange> _OnComplete;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (AllowPrivateAccess = "true", ToolTip = "true면 플레이어 입력으로 다음 줄 진행"))
-	bool ShouldWaitForInput = true;
+	bool _ShouldWaitForInput = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (AllowPrivateAccess = "true", ToolTip = "true면 대사 로그에 기록할 수 있음"))
-	bool ShouldAddToBacklog = true;
+	bool _ShouldAddToBacklog = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (AllowPrivateAccess = "true", ClampMin = "0.0", ToolTip = "0보다 크면 지정 시간 뒤 자동 진행 후보로 사용"))
-	float AutoAdvanceDelay = 0.0f;
+	float _AutoAdvanceDelay = 0.0f;
 
 	UPROPERTY(Transient)
 	int32 _CurrentLineIndex = INDEX_NONE;
@@ -121,7 +121,7 @@ public:
 	bool CompleteDialogueInStoryState(UPARAM(ref) FVNStoryState& _story_state);
 
 	UFUNCTION(BlueprintPure, Category = "VisualNovel|Dialogue")
-	const TArray<FVNDialogueLine>& GetLines() const { return Lines; }
+	const TArray<FVNDialogueLine>& GetLines() const { return _Lines; }
 
 	UFUNCTION(BlueprintPure, Category = "VisualNovel|Dialogue")
 	int32 GetCurrentLineIndex() const { return _CurrentLineIndex; }
@@ -130,11 +130,11 @@ public:
 	bool HasCompletedDialogue() const { return _HasCompletedDialogue; }
 
 	UFUNCTION(BlueprintPure, Category = "VisualNovel|Dialogue")
-	bool IsWaitingForInput() const { return ShouldWaitForInput; }
+	bool IsWaitingForInput() const { return _ShouldWaitForInput; }
 
-	void SetLines(const TArray<FVNDialogueLine>& _lines) { Lines = _lines; }
-	void SetOnEnter(const TArray<FVNStateChange>& _state_changes) { OnEnter = _state_changes; }
-	void SetOnComplete(const TArray<FVNStateChange>& _state_changes) { OnComplete = _state_changes; }
+	void SetLines(const TArray<FVNDialogueLine>& _lines) { _Lines = _lines; }
+	void SetOnEnter(const TArray<FVNStateChange>& _state_changes) { _OnEnter = _state_changes; }
+	void SetOnComplete(const TArray<FVNStateChange>& _state_changes) { _OnComplete = _state_changes; }
 
 private:
 	bool ApplyStateChangesToSubsystem(const TArray<FVNStateChange>& _state_changes) const;

@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 장윤제. All rights reserved.
+// Copyright (c) 2026 장윤제. All rights reserved.
 
 #pragma once
 
@@ -27,10 +27,10 @@ class VISUALNOVEL_API UVNConditionBranch : public UStoryBranchBase
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (AllowPrivateAccess = "true", ToolTip = "위에서부터 순서대로 평가할 조건 분기 목록. 처음 통과한 항목의 출력 인덱스를 선택"))
-	TArray<FVNConditionBranchCase> Cases;
+	TArray<FVNConditionBranchCase> _Cases;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (AllowPrivateAccess = "true", ToolTip = "어떤 조건도 통과하지 못했을 때 사용할 마지막 출력 핀 표시명"))
-	FText DefaultOutputName;
+	FText _DefaultOutputName;
 
 public:
 	UVNConditionBranch();
@@ -48,9 +48,9 @@ public:
 	int32 SelectNextIndexFromStoryState(const FVNStoryState& _story_state, int32 _next_count) const;
 
 	UFUNCTION(BlueprintPure, Category = "VisualNovel|Branch", meta = (ToolTip = "조건이 모두 실패했을 때 사용하는 Default 출력 인덱스"))
-	int32 GetDefaultOutputIndex() const { return Cases.Num(); }
+	int32 GetDefaultOutputIndex() const { return _Cases.Num(); }
 
-	const TArray<FVNConditionBranchCase>& GetCases() const { return Cases; }
+	const TArray<FVNConditionBranchCase>& GetCases() const { return _Cases; }
 
 	void SetCases(const TArray<FVNConditionBranchCase>& _cases);
 	void SetDefaultOutputName(const FText& _display_name);

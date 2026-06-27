@@ -67,5 +67,5 @@ class VISUALNOVEL_API UVNEventSetAsset : public UDataAsset
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (ToolTip = "날짜/슬롯/조건 기준으로 EventHub가 조회할 이벤트 정의 목록"))
-	TArray<FVNEventDef> Events;
+	TArray<FVNEventDef> _Events;
 };

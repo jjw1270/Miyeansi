@@ -63,22 +63,22 @@ class VISUALNOVEL_API UVNChoiceShot : public UStoryShotBase
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (AllowPrivateAccess = "true", MultiLine = true, ToolTip = "선택지 위에 표시할 질문 또는 상황 문구"))
-	FText PromptText;
+	FText _PromptText;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (AllowPrivateAccess = "true", ToolTip = "선택한 ChoiceID를 저장할 NameMap 키. 비우면 결과 저장 생략"))
-	FName ResultKey = NAME_None;
+	FName _ResultKey = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (AllowPrivateAccess = "true", ToolTip = "표시/선택 가능한 선택지 목록"))
-	TArray<FVNChoiceOption> Options;
+	TArray<FVNChoiceOption> _Options;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (AllowPrivateAccess = "true", ToolTip = "선택지 표시 전에 적용할 상태 변경"))
-	TArray<FVNStateChange> OnEnter;
+	TArray<FVNStateChange> _OnEnter;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (AllowPrivateAccess = "true", ToolTip = "선택 완료 뒤 공통 적용할 상태 변경"))
-	TArray<FVNStateChange> OnComplete;
+	TArray<FVNStateChange> _OnComplete;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "VisualNovel", meta = (AllowPrivateAccess = "true", ToolTip = "표시 가능한 활성 선택지가 1개뿐이면 자동 선택할지 여부"))
-	bool ShouldAutoSelectSingleOption = false;
+	bool _ShouldAutoSelectSingleOption = false;
 
 	UPROPERTY(Transient)
 	bool _HasSelected = false;
@@ -109,7 +109,7 @@ public:
 	bool SelectOptionByChoiceIDInStoryState(FName _choice_id, UPARAM(ref) FVNStoryState& _story_state);
 
 	UFUNCTION(BlueprintPure, Category = "VisualNovel|Choice")
-	const TArray<FVNChoiceOption>& GetOptions() const { return Options; }
+	const TArray<FVNChoiceOption>& GetOptions() const { return _Options; }
 
 	UFUNCTION(BlueprintPure, Category = "VisualNovel|Choice")
 	bool HasSelected() const { return _HasSelected; }
@@ -117,11 +117,11 @@ public:
 	UFUNCTION(BlueprintPure, Category = "VisualNovel|Choice")
 	FName GetSelectedChoiceID() const { return _SelectedChoiceID; }
 
-	void SetOptions(const TArray<FVNChoiceOption>& _options) { Options = _options; }
-	void SetResultKey(FName _result_key) { ResultKey = _result_key; }
-	void SetOnEnter(const TArray<FVNStateChange>& _state_changes) { OnEnter = _state_changes; }
-	void SetOnComplete(const TArray<FVNStateChange>& _state_changes) { OnComplete = _state_changes; }
-	void SetShouldAutoSelectSingleOption(bool _should_auto_select) { ShouldAutoSelectSingleOption = _should_auto_select; }
+	void SetOptions(const TArray<FVNChoiceOption>& _options) { _Options = _options; }
+	void SetResultKey(FName _result_key) { _ResultKey = _result_key; }
+	void SetOnEnter(const TArray<FVNStateChange>& _state_changes) { _OnEnter = _state_changes; }
+	void SetOnComplete(const TArray<FVNStateChange>& _state_changes) { _OnComplete = _state_changes; }
+	void SetShouldAutoSelectSingleOption(bool _should_auto_select) { _ShouldAutoSelectSingleOption = _should_auto_select; }
 
 private:
 	bool ApplyOnEnterToSubsystem() const;

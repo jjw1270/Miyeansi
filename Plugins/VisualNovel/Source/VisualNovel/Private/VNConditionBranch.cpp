@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 장윤제. All rights reserved.
+// Copyright (c) 2026 장윤제. All rights reserved.
 
 #include "VNConditionBranch.h"
 
@@ -11,7 +11,7 @@
 
 UVNConditionBranch::UVNConditionBranch()
 {
-	DefaultOutputName = LOCTEXT("DefaultOutputName", "Default");
+	_DefaultOutputName = LOCTEXT("DefaultOutputName", "Default");
 	RebuildBranchOutputs();
 }
 
@@ -55,10 +55,10 @@ int32 UVNConditionBranch::SelectNextIndexFromStoryState(const FVNStoryState& _st
 		return INDEX_NONE;
 	}
 
-	const int32 selectable_case_count = FMath::Min(Cases.Num(), FMath::Max(0, _next_count - 1));
+	const int32 selectable_case_count = FMath::Min(_Cases.Num(), FMath::Max(0, _next_count - 1));
 	for (int32 case_index = 0; case_index < selectable_case_count; ++case_index)
 	{
-		if (UVNConditionEvaluator::EvaluateConditionSet(_story_state, Cases[case_index].ConditionSet))
+		if (UVNConditionEvaluator::EvaluateConditionSet(_story_state, _Cases[case_index].ConditionSet))
 		{
 			return case_index;
 		}
@@ -69,30 +69,30 @@ int32 UVNConditionBranch::SelectNextIndexFromStoryState(const FVNStoryState& _st
 
 void UVNConditionBranch::SetCases(const TArray<FVNConditionBranchCase>& _cases)
 {
-	Cases = _cases;
+	_Cases = _cases;
 	RebuildBranchOutputs();
 }
 
 void UVNConditionBranch::SetDefaultOutputName(const FText& _display_name)
 {
-	DefaultOutputName = _display_name;
+	_DefaultOutputName = _display_name;
 	RebuildBranchOutputs();
 }
 
 void UVNConditionBranch::RebuildBranchOutputs()
 {
 	_BranchOutputs.Reset();
-	_BranchOutputs.Reserve(Cases.Num() + 1);
+	_BranchOutputs.Reserve(_Cases.Num() + 1);
 
-	for (int32 case_index = 0; case_index < Cases.Num(); ++case_index)
+	for (int32 case_index = 0; case_index < _Cases.Num(); ++case_index)
 	{
 		FStoryBranchOutput output;
-		output.DisplayName = GetCaseDisplayName(Cases[case_index], case_index);
+		output.DisplayName = GetCaseDisplayName(_Cases[case_index], case_index);
 		_BranchOutputs.Add(output);
 	}
 
 	FStoryBranchOutput default_output;
-	default_output.DisplayName = DefaultOutputName.IsEmpty() ? LOCTEXT("DefaultOutputFallbackName", "Default") : DefaultOutputName;
+	default_output.DisplayName = _DefaultOutputName.IsEmpty() ? LOCTEXT("DefaultOutputFallbackName", "Default") : _DefaultOutputName;
 	_BranchOutputs.Add(default_output);
 }
 
@@ -113,7 +113,7 @@ int32 UVNConditionBranch::GetSafeDefaultIndex(int32 _next_count) const
 		return INDEX_NONE;
 	}
 
-	return FMath::Clamp(Cases.Num(), 0, _next_count - 1);
+	return FMath::Clamp(_Cases.Num(), 0, _next_count - 1);
 }
 
 #undef LOCTEXT_NAMESPACE

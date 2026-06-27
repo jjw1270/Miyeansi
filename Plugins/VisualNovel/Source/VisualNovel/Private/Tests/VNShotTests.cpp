@@ -73,37 +73,37 @@ bool FVNDialogueShotStateFlowTest::RunTest(const FString& _parameters)
 {
 	using namespace VNShotTests;
 
-	const FName EnteredKey(TEXT("DialogueEntered"));
-	const FName LineCountKey(TEXT("LineCount"));
-	const FName CompletedKey(TEXT("DialogueCompleted"));
+	const FName entered_key(TEXT("DialogueEntered"));
+	const FName line_count_key(TEXT("LineCount"));
+	const FName completed_key(TEXT("DialogueCompleted"));
 
 	UVNDialogueShot* dialogue_shot = NewObject<UVNDialogueShot>();
 
 	TArray<FVNStateChange> on_enter;
-	on_enter.Add(MakeBoolChange(EnteredKey, EVNStateOp::Set, true));
+	on_enter.Add(MakeBoolChange(entered_key, EVNStateOp::Set, true));
 	dialogue_shot->SetOnEnter(on_enter);
 
 	TArray<FVNDialogueLine> lines;
-	lines.Add(MakeLine(TEXT("첫 번째 줄"), { MakeIntChange(LineCountKey, EVNStateOp::Add, 1) }));
-	lines.Add(MakeLine(TEXT("두 번째 줄"), { MakeIntChange(LineCountKey, EVNStateOp::Add, 1) }));
+	lines.Add(MakeLine(TEXT("첫 번째 줄"), { MakeIntChange(line_count_key, EVNStateOp::Add, 1) }));
+	lines.Add(MakeLine(TEXT("두 번째 줄"), { MakeIntChange(line_count_key, EVNStateOp::Add, 1) }));
 	dialogue_shot->SetLines(lines);
 
 	TArray<FVNStateChange> on_complete;
-	on_complete.Add(MakeBoolChange(CompletedKey, EVNStateOp::Set, true));
+	on_complete.Add(MakeBoolChange(completed_key, EVNStateOp::Set, true));
 	dialogue_shot->SetOnComplete(on_complete);
 
 	FVNStoryState story_state;
 	TestTrue(TEXT("BeginDialogue applies OnEnter and first line OnShow"), dialogue_shot->BeginDialogueInStoryState(story_state));
-	TestTrue(TEXT("OnEnter bool is set"), story_state.BoolMap.FindRef(EnteredKey));
-	TestEqual(TEXT("First line OnShow is applied"), story_state.IntMap.FindRef(LineCountKey), 1);
+	TestTrue(TEXT("OnEnter bool is set"), story_state.BoolMap.FindRef(entered_key));
+	TestEqual(TEXT("First line OnShow is applied"), story_state.IntMap.FindRef(line_count_key), 1);
 	TestEqual(TEXT("Current line index points to first line"), dialogue_shot->GetCurrentLineIndex(), 0);
 
 	TestTrue(TEXT("AdvanceLine applies second line OnShow"), dialogue_shot->AdvanceLineInStoryState(story_state));
-	TestEqual(TEXT("Second line increments line count"), story_state.IntMap.FindRef(LineCountKey), 2);
+	TestEqual(TEXT("Second line increments line count"), story_state.IntMap.FindRef(line_count_key), 2);
 	TestEqual(TEXT("Current line index points to second line"), dialogue_shot->GetCurrentLineIndex(), 1);
 
 	TestTrue(TEXT("Advancing past last line completes dialogue"), dialogue_shot->AdvanceLineInStoryState(story_state));
-	TestTrue(TEXT("OnComplete bool is set"), story_state.BoolMap.FindRef(CompletedKey));
+	TestTrue(TEXT("OnComplete bool is set"), story_state.BoolMap.FindRef(completed_key));
 	TestTrue(TEXT("Dialogue is marked complete"), dialogue_shot->HasCompletedDialogue());
 
 	return true;
@@ -117,15 +117,15 @@ bool FVNChoiceShotVisibilityTest::RunTest(const FString& _parameters)
 {
 	using namespace VNShotTests;
 
-	const FName TrustKey(TEXT("TrustValue"));
-	const FName SecretKey(TEXT("HasSecretChoice"));
+	const FName trust_key(TEXT("TrustValue"));
+	const FName secret_key(TEXT("HasSecretChoice"));
 
 	UVNChoiceShot* choice_shot = NewObject<UVNChoiceShot>();
 	TArray<FVNChoiceOption> options;
 
 	FVNChoiceOption first_option = MakeOption(TEXT("OptionA"), TEXT("첫 번째 선택지를 고른다"));
-	first_option.ShowCond.All.Add(MakeBoolCondition(SecretKey, EVNCompareOp::Equal, true));
-	first_option.EnableCond.All.Add(MakeIntCondition(TrustKey, EVNCompareOp::GreaterEqual, 6));
+	first_option.ShowCond.All.Add(MakeBoolCondition(secret_key, EVNCompareOp::Equal, true));
+	first_option.EnableCond.All.Add(MakeIntCondition(trust_key, EVNCompareOp::GreaterEqual, 6));
 	options.Add(first_option);
 
 	FVNChoiceOption alone_option = MakeOption(TEXT("OptionB"), TEXT("두 번째 선택지를 고른다"));
@@ -143,8 +143,8 @@ bool FVNChoiceShotVisibilityTest::RunTest(const FString& _parameters)
 	choice_shot->SetOptions(options);
 
 	FVNStoryState story_state;
-	story_state.BoolMap.Add(SecretKey, true);
-	story_state.IntMap.Add(TrustKey, 5);
+	story_state.BoolMap.Add(secret_key, true);
+	story_state.IntMap.Add(trust_key, 5);
 
 	const TArray<FVNChoiceOptionState> visible_options = choice_shot->GetVisibleOptionsFromStoryState(story_state);
 	TestEqual(TEXT("Hidden option is filtered out"), visible_options.Num(), 3);
@@ -156,7 +156,7 @@ bool FVNChoiceShotVisibilityTest::RunTest(const FString& _parameters)
 		TestFalse(TEXT("Locked option is visible but disabled"), visible_options[2].IsEnabled);
 	}
 
-	story_state.IntMap[TrustKey] = 6;
+	story_state.IntMap[trust_key] = 6;
 	const TArray<FVNChoiceOptionState> updated_options = choice_shot->GetVisibleOptionsFromStoryState(story_state);
 	TestTrue(TEXT("OptionA option becomes enabled at trust threshold"), updated_options.Num() > 0 && updated_options[0].IsEnabled);
 
@@ -171,18 +171,18 @@ bool FVNChoiceShotSelectionTest::RunTest(const FString& _parameters)
 {
 	using namespace VNShotTests;
 
-	const FName ResultKey(TEXT("SelectedOption"));
-	const FName EnteredKey(TEXT("ChoiceEntered"));
-	const FName TrustKey(TEXT("TrustValue"));
-	const FName CompletedKey(TEXT("ChoiceCompleted"));
+	const FName result_key(TEXT("SelectedOption"));
+	const FName entered_key(TEXT("ChoiceEntered"));
+	const FName trust_key(TEXT("TrustValue"));
+	const FName completed_key(TEXT("ChoiceCompleted"));
 
 	UVNChoiceShot* choice_shot = NewObject<UVNChoiceShot>();
-	choice_shot->SetResultKey(ResultKey);
-	choice_shot->SetOnEnter({ MakeBoolChange(EnteredKey, EVNStateOp::Set, true) });
-	choice_shot->SetOnComplete({ MakeBoolChange(CompletedKey, EVNStateOp::Set, true) });
+	choice_shot->SetResultKey(result_key);
+	choice_shot->SetOnEnter({ MakeBoolChange(entered_key, EVNStateOp::Set, true) });
+	choice_shot->SetOnComplete({ MakeBoolChange(completed_key, EVNStateOp::Set, true) });
 
 	FVNChoiceOption first_option = MakeOption(TEXT("OptionA"), TEXT("첫 번째 선택지를 고른다"));
-	first_option.OnSelect.Add(MakeIntChange(TrustKey, EVNStateOp::Add, 1));
+	first_option.OnSelect.Add(MakeIntChange(trust_key, EVNStateOp::Add, 1));
 
 	FVNChoiceOption disabled_option = MakeOption(TEXT("Locked"), TEXT("잠긴 선택지"));
 	disabled_option.EnableCond.All.Add(MakeBoolCondition(TEXT("MissingFlag"), EVNCompareOp::Exists));
@@ -191,15 +191,15 @@ bool FVNChoiceShotSelectionTest::RunTest(const FString& _parameters)
 
 	FVNStoryState story_state;
 	TestTrue(TEXT("BeginChoice applies OnEnter"), choice_shot->BeginChoiceInStoryState(story_state));
-	TestTrue(TEXT("Choice OnEnter flag is set"), story_state.BoolMap.FindRef(EnteredKey));
+	TestTrue(TEXT("Choice OnEnter flag is set"), story_state.BoolMap.FindRef(entered_key));
 
 	TestFalse(TEXT("Disabled option cannot be selected"), choice_shot->SelectOptionInStoryState(1, story_state));
 	TestFalse(TEXT("Failed selection does not mark shot selected"), choice_shot->HasSelected());
 
 	TestTrue(TEXT("Enabled option can be selected"), choice_shot->SelectOptionInStoryState(0, story_state));
-	TestEqual(TEXT("ChoiceID is stored in NameMap"), story_state.NameMap.FindRef(ResultKey), FName(TEXT("OptionA")));
-	TestEqual(TEXT("OnSelect state change is applied"), story_state.IntMap.FindRef(TrustKey), 1);
-	TestTrue(TEXT("OnComplete state change is applied"), story_state.BoolMap.FindRef(CompletedKey));
+	TestEqual(TEXT("ChoiceID is stored in NameMap"), story_state.NameMap.FindRef(result_key), FName(TEXT("OptionA")));
+	TestEqual(TEXT("OnSelect state change is applied"), story_state.IntMap.FindRef(trust_key), 1);
+	TestTrue(TEXT("OnComplete state change is applied"), story_state.BoolMap.FindRef(completed_key));
 	TestTrue(TEXT("Successful selection marks shot selected"), choice_shot->HasSelected());
 	TestEqual(TEXT("Selected ChoiceID is cached"), choice_shot->GetSelectedChoiceID(), FName(TEXT("OptionA")));
 

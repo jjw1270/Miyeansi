@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 장윤제. All rights reserved.
+// Copyright (c) 2026 장윤제. All rights reserved.
 
 #include "VNDialogueShot.h"
 
@@ -12,7 +12,7 @@ void UVNDialogueShot::OnEnterShot_Implementation()
 	_CurrentLineIndex = INDEX_NONE;
 	_HasCompletedDialogue = false;
 
-	ApplyStateChangesToSubsystem(OnEnter);
+	ApplyStateChangesToSubsystem(_OnEnter);
 	AdvanceLine();
 }
 
@@ -24,13 +24,13 @@ bool UVNDialogueShot::AdvanceLine()
 	}
 
 	const int32 next_line_index = _CurrentLineIndex + 1;
-	if (Lines.IsValidIndex(next_line_index) == false)
+	if (_Lines.IsValidIndex(next_line_index) == false)
 	{
 		return CompleteDialogue();
 	}
 
 	_CurrentLineIndex = next_line_index;
-	return ApplyStateChangesToSubsystem(Lines[_CurrentLineIndex].OnShow);
+	return ApplyStateChangesToSubsystem(_Lines[_CurrentLineIndex].OnShow);
 }
 
 bool UVNDialogueShot::BeginDialogueInStoryState(FVNStoryState& _story_state)
@@ -38,7 +38,7 @@ bool UVNDialogueShot::BeginDialogueInStoryState(FVNStoryState& _story_state)
 	_CurrentLineIndex = INDEX_NONE;
 	_HasCompletedDialogue = false;
 
-	bool is_applied = UVNConditionEvaluator::ApplyStateChanges(_story_state, OnEnter);
+	bool is_applied = UVNConditionEvaluator::ApplyStateChanges(_story_state, _OnEnter);
 	is_applied &= AdvanceLineInStoryState(_story_state);
 	return is_applied;
 }
@@ -51,7 +51,7 @@ bool UVNDialogueShot::CompleteDialogue()
 	}
 
 	_HasCompletedDialogue = true;
-	const bool is_applied = ApplyStateChangesToSubsystem(OnComplete);
+	const bool is_applied = ApplyStateChangesToSubsystem(_OnComplete);
 	FinishShot();
 	return is_applied;
 }
@@ -64,13 +64,13 @@ bool UVNDialogueShot::AdvanceLineInStoryState(FVNStoryState& _story_state)
 	}
 
 	const int32 next_line_index = _CurrentLineIndex + 1;
-	if (Lines.IsValidIndex(next_line_index) == false)
+	if (_Lines.IsValidIndex(next_line_index) == false)
 	{
 		return CompleteDialogueInStoryState(_story_state);
 	}
 
 	_CurrentLineIndex = next_line_index;
-	return UVNConditionEvaluator::ApplyStateChanges(_story_state, Lines[_CurrentLineIndex].OnShow);
+	return UVNConditionEvaluator::ApplyStateChanges(_story_state, _Lines[_CurrentLineIndex].OnShow);
 }
 
 bool UVNDialogueShot::CompleteDialogueInStoryState(FVNStoryState& _story_state)
@@ -81,7 +81,7 @@ bool UVNDialogueShot::CompleteDialogueInStoryState(FVNStoryState& _story_state)
 	}
 
 	_HasCompletedDialogue = true;
-	return UVNConditionEvaluator::ApplyStateChanges(_story_state, OnComplete);
+	return UVNConditionEvaluator::ApplyStateChanges(_story_state, _OnComplete);
 }
 
 bool UVNDialogueShot::ApplyStateChangesToSubsystem(const TArray<FVNStateChange>& _state_changes) const
