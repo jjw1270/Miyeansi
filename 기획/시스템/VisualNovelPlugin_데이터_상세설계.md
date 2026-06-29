@@ -1,4 +1,4 @@
-# VisualNovelPlugin 데이터 상세 설계
+﻿# VisualNovelPlugin 데이터 상세 설계
 
 이 문서는 `VisualNovelPlugin` 1차 구현에 필요한 `FVNStoryState`와 `UVNEventSetAsset`의 상세 필드를 확정한다.
 
@@ -546,34 +546,16 @@ public:
 | 서린 단서 보유 | `Domain=Fragment`, `ItemID=Fragment:HasSeorinClue`, `Op=Exists` |
 | 회피 루프 아님 | `Domain=Int`, `Key=Avoid`, `Op=Less`, `IntValue=3` |
 
-### 9.1 StoryState Subsystem과 조건 Branch
+### 9.1 StoryState Subsystem과 분기 작성 기준
 
-`UVNStoryStateSubsystem`은 현재 GameInstance의 `FVNStoryState`를 보관한다. `UVNConditionBranch`는 StoryFlow의 `UStoryBranchBase`를 상속하며, 실행 시 이 Subsystem의 StoryState를 읽어 출력 인덱스를 고른다.
+`UVNStoryStateSubsystem`은 현재 GameInstance의 `FVNStoryState`를 보관한다. StoryFlow 분기가 필요하면 프로젝트 코드에서 목적이 드러나는 전용 Branch 또는 평가 Shot을 작게 작성한다.
 
-`FVNConditionBranchCase`는 하나의 Branch 출력 후보를 나타낸다.
+분기 작성 기준:
 
-| 필드 | 타입 | 설명 |
-|---|---|---|
-| `DisplayName` | `FText` | Branch 출력 핀 표시명 |
-| `ConditionSet` | `FVNConditionSet` | 이 출력이 선택되기 위해 만족해야 하는 조건 묶음 |
-
-`UVNConditionBranch` 출력 핀은 항상 아래 순서를 따른다.
-
-```text
-_Cases[0]
-_Cases[1]
-_Cases[2]
-...
-Default
-```
-
-평가 규칙:
-
-1. `_Cases`를 위에서부터 순서대로 평가한다.
-2. 처음 통과한 Case의 배열 인덱스를 StoryFlow 출력 인덱스로 반환한다.
-3. 어떤 Case도 통과하지 못하면 마지막 `Default` 출력으로 보낸다.
-4. `UVNStoryStateSubsystem`을 찾지 못한 경우도 `Default`로 보낸다.
-5. `_Cases`나 `_DefaultOutputName`이 바뀌면 Branch 출력 목록을 다시 구성한다.
+1. Branch 이름은 용도를 드러낸다. 예: `UDDayEndingBranch`, `UChoiceResultBranch`.
+2. 필드는 범용 조건 트리보다 실제 규칙을 드러내는 값으로 둔다. 예: `RequiredTrust`, `RequiredFragmentID`, `ResultKey`.
+3. 같은 패턴이 반복되기 전까지 재사용 Branch/Data 구조를 만들지 않는다.
+4. 공통화가 필요해지면 먼저 `UVNConditionEvaluator` 헬퍼나 프로젝트 전용 헬퍼 함수로 시작한다.
 
 ## 10. VN Shot 입력 필드
 
@@ -584,7 +566,7 @@ Default
 - `UVNDialogueShot`은 StoryFlow의 기본 Shot처럼 단일 `Next` 핀으로 진행한다.
 - `UVNChoiceShot`도 1차에서는 단일 `Next` 핀만 사용한다.
 - 선택지별로 바로 다른 Scene에 점프하지 않는다.
-- 선택 결과는 `NameMap`이나 `BoolMap`에 저장하고, 다음 노드의 `UVNConditionBranch`가 분기를 고른다.
+- 선택 결과는 `NameMap`이나 `BoolMap`에 저장하고, 이후 필요한 용도별 Branch 또는 평가 Shot이 분기를 고른다.
 - 선택지별 직접 출력 핀은 에디터 커스텀 노드가 필요하므로 1차 범위에서 제외한다.
 
 이 규칙을 지키면 StoryFlow 코어를 바꾸지 않고도 선택지 분기를 만들 수 있다.
@@ -599,7 +581,7 @@ Default
 | 상태 변경 | `FVNStateChange` 배열 재사용 |
 | 조건 | `FVNConditionSet` 재사용 |
 | 긴 문장 | `FText`, `meta=(MultiLine=true)` |
-| 분기 | ChoiceShot 직접 점프가 아니라 `UVNConditionBranch`에서 처리 |
+| 분기 | ChoiceShot 직접 점프가 아니라 용도별 Branch 또는 평가 Shot에서 처리 |
 
 ### 10.2 EVNDialogueLineKind
 
@@ -841,7 +823,7 @@ private:
 | `Options[0].OnSelect` | `DidChooseHayeonOnDDay = true`, `HayeonTrust += 1` |
 | `Options[1].ChoiceID` | `Alone` |
 | `Options[1].Text` | 혼자 소무대를 확인한다 |
-| 다음 노드 | `UVNConditionBranch` 또는 `DDay_03Assess` |
+| 다음 노드 | 용도별 Branch, 평가 Shot 또는 `DDay_03Assess` |
 
 
 ### 10.8 1차 구현 메모

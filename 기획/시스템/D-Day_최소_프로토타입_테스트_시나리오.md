@@ -1,4 +1,4 @@
-# D-Day 최소 프로토타입 테스트 시나리오
+﻿# D-Day 최소 프로토타입 테스트 시나리오
 
 이 문서는 `VisualNovelPlugin` 1차 구현이 실제로 동작하는지 확인하기 위한 최소 테스트 명세다.
 
@@ -13,7 +13,7 @@
 3. 진엔딩 조건 충족 시 `DDay_04TrueChoice`에서 최종 선택 후 `DDay_05True`로 진입하고 `TE_00_TimeSkip`로 넘어간다.
 4. 실패 루프 1종 이상이 D-25 복귀 상태를 만든다.
 
-이 테스트가 통과하면 `FVNStoryState`, `FVNCondition`, `FVNStateChange`, `UVNDialogueShot`, `UVNChoiceShot`, `UVNConditionBranch`의 최소 연결이 검증된다.
+이 테스트가 통과하면 `FVNStoryState`, `FVNCondition`, `FVNStateChange`, `UVNDialogueShot`, `UVNChoiceShot`, 프로젝트 전용 분기의 최소 연결이 검증된다.
 
 ## 2. 테스트 범위
 
@@ -149,7 +149,7 @@ return True
 
 통과 기준:
 
-- `UVNConditionBranch`가 `DDayResult == True` 조건을 읽고 `DDay_04TrueChoice`로 보낸다.
+- 프로젝트 전용 D-Day 분기 또는 평가 Shot이 `DDayResult == True`를 읽고 `DDay_04TrueChoice`로 보낸다.
 - 최종 선택 Scene에서 `[하연에게 말하러 간다]`를 선택하면 `DDay_05True`로 보낸다.
 - `DDay_05True`의 `OnComplete` 또는 대응 상태 변경이 진엔딩 후일담 진입 조건을 켠다.
 
@@ -359,7 +359,7 @@ ClueScore = 2
 통과 기준:
 
 - `UVNChoiceShot`이 직접 Scene 점프를 하지 않고 선택 결과만 저장한다.
-- 이후 분기는 `UVNConditionBranch`나 다음 평가 Shot에서 처리된다.
+- 이후 분기는 프로젝트 전용 Branch나 다음 평가 Shot에서 처리된다.
 
 ### TC-CHOICE-002: 조건 미충족 선택지 비활성
 
@@ -406,7 +406,7 @@ ClueScore = 2
 | `FVNConditionSet` | All/Any/None 평가 |
 | `UVNDialogueShot` | 대사 표시, OnEnter/OnShow/OnComplete 적용 |
 | `UVNChoiceShot` | 선택지 조건, ResultKey 저장, OnSelect 적용 |
-| `UVNConditionBranch` | `DDayResult` 값에 따라 출력 인덱스 선택 |
+| 프로젝트 전용 D-Day 분기 | `DDayResult` 값에 따라 다음 Scene 선택 |
 | `UVNEventHubSubsystem` | 실패 후 `ReturnDay = D25` 기준 허브 복귀 |
 
 ## 9. 1차 완료 기준
@@ -428,5 +428,5 @@ ClueScore = 2
 2. `FVNStoryState`, `FVNStateChange`, `FVNConditionSet` 구현
 3. `UVNConditionEvaluator` 구현
 4. `UVNDialogueShot`, `UVNChoiceShot` 구현
-5. `UVNConditionBranch` 구현
+5. 프로젝트 전용 D-Day 분기 또는 평가 Shot 구현
 6. 이 문서의 D-Day 테스트 데이터를 최소 에셋으로 제작

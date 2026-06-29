@@ -1,6 +1,6 @@
 # VisualNovel
 
-`VisualNovel`은 Unreal Engine 5 프로젝트에서 `StoryFlow` 위에 **미연시 진행 상태**, **조건 평가**, **상태 변경**, **조건 Branch**를 얹기 위한 런타임 플러그인이다.
+`VisualNovel`은 Unreal Engine 5 프로젝트에서 `StoryFlow` 위에 **미연시 진행 상태**, **조건 평가**, **상태 변경**, **대사/선택지 Shot**, **이벤트 허브**를 얹기 위한 런타임 플러그인이다.
 
 이 문서는 `Plugins/VisualNovel`의 **현재 코드 기준**으로 유지되는 기술 README다. 기획 기준과 1차 구현 범위는 프로젝트 기획 문서의 `VisualNovelPlugin_1차_구현범위.md`, `VisualNovelPlugin_데이터_상세설계.md`를 따른다.
 
@@ -13,7 +13,6 @@
 - `FVNStateChange`는 StoryState에 Set/Add/Remove/Max/Min 변경을 적용한다.
 - `UVNConditionEvaluator`는 조건 평가와 상태 변경 적용을 담당하는 Blueprint Function Library다.
 - `UVNStoryStateSubsystem`은 현재 GameInstance의 VN 진행 상태를 보관한다.
-- `UVNConditionBranch`는 StoryFlow Branch로 동작하며, 조건 Case를 순서대로 평가해 다음 출력 핀을 선택한다.
 - `UVNDialogueShot`은 대사 라인 진행과 OnEnter/OnShow/OnComplete 상태 변경 적용 구조를 제공한다.
 - `UVNChoiceShot`은 선택지 표시 조건, 활성 조건, 선택 결과 저장, OnSelect/OnComplete 적용 구조를 제공한다.
 - `UVNEventSetAsset`과 `UVNEventHubSubsystem`은 날짜/슬롯/조건 기준으로 시작 가능한 이벤트를 고르고 시작/완료 상태 변경을 적용한다.
@@ -39,7 +38,7 @@
 
 | 모듈 | 타입 | 역할 |
 | --- | --- | --- |
-| `VisualNovel` | Runtime | VN 상태 구조, ItemID 래퍼, ItemTableRow, 조건 평가, 상태 변경, StoryState Subsystem, 조건 Branch, Dialogue/Choice Shot, EventHub |
+| `VisualNovel` | Runtime | VN 상태 구조, ItemID 래퍼, ItemTableRow, 조건 평가, 상태 변경, StoryState Subsystem, Dialogue/Choice Shot, EventHub |
 
 ### 주요 의존성
 
@@ -176,30 +175,7 @@ Blueprint/C++에서 조건 평가와 상태 변경 적용을 호출하는 함수
 
 SaveGame 브리지가 구현되면 이 Subsystem의 `FVNStoryState`와 저장 객체를 동기화하는 방식으로 연결한다.
 
-### `UVNConditionBranch`
-
-파일: `Source/VisualNovel/Public/VNConditionBranch.h`
-
-`UStoryBranchBase`를 상속한 VN 전용 조건 Branch다.
-
-동작:
-
-1. `UVNStoryStateSubsystem`에서 현재 `FVNStoryState`를 읽는다.
-2. `_Cases`를 위에서부터 평가한다.
-3. 처음 통과한 Case의 출력 인덱스를 반환한다.
-4. 아무 Case도 통과하지 못하거나 Subsystem을 찾지 못하면 마지막 `Default` 출력으로 보낸다.
-
-출력 핀 구성:
-
-```text
-_Cases[0]
-_Cases[1]
-_Cases[2]
-...
-Default
-```
-
-`_Cases`나 `_DefaultOutputName`이 바뀌면 StoryFlow Branch 출력 목록도 자동으로 다시 구성된다.
+분기는 플러그인 공통 템플릿으로 미리 제공하지 않고, 프로젝트에서 필요한 시점에 목적이 드러나는 용도별 Branch 또는 평가 Shot을 작게 작성한다.
 
 ### `UVNDialogueShot`
 
@@ -266,7 +242,6 @@ Source/VisualNovel/Private/Tests
 | 테스트 | 확인 내용 |
 | --- | --- |
 | `VisualNovel.ConditionEvaluator.*` | 조건 평가, 조건 묶음, 상태 변경, batch 적용 |
-| `VisualNovel.ConditionBranch.*` | Branch 출력 구성, 조건 선택, Default fallback |
 | `VisualNovel.ItemTableRows.*` | VN Row의 기본 ItemType과 메타데이터 저장 |
 | `VisualNovel.EventHub.*` | 이벤트 표시 필터, Auto 선택, 시작/완료 상태 변경 |
 | `VisualNovel.Shot.Dialogue.StateFlow` | DialogueShot 라인 진행과 상태 변경 적용 |
@@ -299,8 +274,7 @@ Source/VisualNovel/Private/Tests
 - 조건/상태 변경 구조
 - 조건 평가기
 - StoryState Subsystem
-- Condition Branch
-- 조건/Branch 자동화 테스트
+- 조건 평가 자동화 테스트
 - `UVNDialogueShot` 1차 구조
 - `UVNChoiceShot` 1차 구조
 - `UVNEventSetAsset` / `UVNEventHubSubsystem` 1차 구조
@@ -318,8 +292,7 @@ Source/VisualNovel/Private/Tests
 - SaveGame 브리지는 아직 구현 전이다.
 - EventHub는 아직 StoryFlow 실제 Scene 전환 호출을 직접 수행하지 않고, 시작할 `StartSceneID`와 상태 변경까지만 결정한다.
 - Dialogue/Choice Shot은 UI 위젯 브리지 전 단계이며, 현재는 라인/선택 상태 흐름 API까지만 제공한다.
-- `UVNConditionBranch`는 현재 `UVNStoryStateSubsystem`의 메모리 상태만 읽는다.
-- Branch는 StoryFlow 정책에 따라 순간 판단 단계이며, Branch 자체를 저장 대상으로 보지 않는다.
+- 분기는 StoryFlow 정책에 따라 순간 판단 단계이며, 복잡한 공통 템플릿을 먼저 만들기보다 필요할 때 용도별 Branch를 작게 작성한다.
 - Miyeansi 전용 키나 루트 조건은 플러그인 코드와 플러그인 자동화 테스트에 하드코딩하지 않고 DataAsset/Blueprint/프로젝트 코드에서 주입해야 한다.
 
 ---
@@ -339,17 +312,15 @@ Source/VisualNovel/Private/Tests
 11. `Source/VisualNovel/Private/VNConditionEvaluator.cpp`
 12. `Source/VisualNovel/Public/VNStoryStateSubsystem.h`
 13. `Source/VisualNovel/Private/VNStoryStateSubsystem.cpp`
-14. `Source/VisualNovel/Public/VNConditionBranch.h`
-15. `Source/VisualNovel/Private/VNConditionBranch.cpp`
-16. `Source/VisualNovel/Public/VNDialogueShot.h`
-17. `Source/VisualNovel/Private/VNDialogueShot.cpp`
-18. `Source/VisualNovel/Public/VNChoiceShot.h`
-19. `Source/VisualNovel/Private/VNChoiceShot.cpp`
-20. `Source/VisualNovel/Public/VNEventSetAsset.h`
-21. `Source/VisualNovel/Private/VNEventSetAsset.cpp`
-22. `Source/VisualNovel/Public/VNEventHubSubsystem.h`
-23. `Source/VisualNovel/Private/VNEventHubSubsystem.cpp`
-24. `Source/VisualNovel/Private/Tests/*.cpp`
+14. `Source/VisualNovel/Public/VNDialogueShot.h`
+15. `Source/VisualNovel/Private/VNDialogueShot.cpp`
+16. `Source/VisualNovel/Public/VNChoiceShot.h`
+17. `Source/VisualNovel/Private/VNChoiceShot.cpp`
+18. `Source/VisualNovel/Public/VNEventSetAsset.h`
+19. `Source/VisualNovel/Private/VNEventSetAsset.cpp`
+20. `Source/VisualNovel/Public/VNEventHubSubsystem.h`
+21. `Source/VisualNovel/Private/VNEventHubSubsystem.cpp`
+22. `Source/VisualNovel/Private/Tests/*.cpp`
 
 ---
 

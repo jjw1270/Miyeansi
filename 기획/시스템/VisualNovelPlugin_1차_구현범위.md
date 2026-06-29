@@ -1,4 +1,4 @@
-# VisualNovelPlugin 1차 구현 범위
+﻿# VisualNovelPlugin 1차 구현 범위
 
 이 문서는 StoryFlow 위에 얹을 재사용 가능한 미연시 전용 플러그인 `VisualNovelPlugin`의 1차 구현 범위를 확정한다.
 
@@ -12,7 +12,7 @@
 StoryFlow Scene 실행
 -> VN용 대사/선택지 Shot 재생
 -> StoryState 변경
--> 조건 Branch 평가
+-> 프로젝트 전용 Branch 또는 평가 Shot에서 조건 평가
 -> 다음 Scene 전환
 -> SaveGame에 StoryFlowRef + StoryState 저장
 -> 루프/엔딩 결과 기록
@@ -108,7 +108,7 @@ StoryFlow Scene 실행
 
 - `UVNChoiceShot`은 StoryFlow 기본 Shot의 단일 `Next` 핀으로만 진행한다.
 - 선택지별 직접 Scene 점프는 하지 않는다.
-- 선택한 `ChoiceID`를 `ResultKey`로 `NameMap`에 저장하고, 다음 `UVNConditionBranch`가 실제 분기를 고른다.
+- 선택한 `ChoiceID`를 `ResultKey`로 `NameMap`에 저장하고, 이후 필요한 용도별 Branch 또는 평가 Shot이 실제 분기를 고른다.
 - 선택지별 출력 핀을 가진 커스텀 그래프 노드는 2차 범위로 둔다.
 
 1차 UI는 완성형 연출보다 기능 확인을 우선한다.
@@ -128,23 +128,20 @@ StoryFlow Scene 실행
 - 캐릭터별 대사창 스킨
 - 갤러리/도감/크레딧 UI
 
-### 3.4 VN용 Branch
+### 3.4 분기 작성 기준
 
-`UVNConditionBranch`는 StoryState를 읽어 StoryFlow 출력 인덱스를 선택한다.
+1차에서는 범용 분기 템플릿을 플러그인 기본 기능으로 제공하지 않는다. 조건 조합이 복잡한 공통 템플릿은 제작 의도 파악이 어렵고 Blueprint CDO 편집/컴파일 경로를 불안정하게 만들 수 있으므로 제외한다.
 
-1차 사용처:
+분기는 아래 기준으로 처리한다.
 
-- D-Day 최종 결과: `DDay_04Gate`
-- 루프 복귀 여부
-- 진엔딩 후일담 진입 여부
-- 조건 미충족 선택지의 대체 흐름
-
-D-Day 결과 평가는 별도 함수 또는 프로젝트 전용 평가 에셋으로 분리한다.
+- 간단한 선택 결과 분기는 `NameMap`/`BoolMap` 값을 저장한 뒤, 프로젝트에서 필요한 용도별 Branch 또는 평가 Shot을 작게 작성한다.
+- D-Day 최종 결과처럼 의미가 분명한 분기는 `DDayResult` 계산 Shot/함수 또는 `UDDay...Branch` 같은 프로젝트 전용 Branch로 구현한다.
+- 같은 분기 패턴이 여러 번 반복될 때만 공통 헬퍼나 재사용 Branch를 검토한다.
 
 ```text
 EvaluateDDayResult()
 -> HiddenCollapse / True / HayeonMiss / SohaSad / SeorinSad / MiruSad / AccFail / AvoidLoop
--> UVNConditionBranch가 출력 링크 선택
+-> 프로젝트 전용 Branch 또는 평가 Shot이 출력 링크 선택
 ```
 
 ### 3.5 EventHub
@@ -240,9 +237,9 @@ FVNStoryState StoryState
 3. `UVNConditionEvaluator` 작성
    - bool/int/name 조건
    - all/any/not 조합
-4. `UVNStoryStateSubsystem` / `UVNConditionBranch` 작성
+4. `UVNStoryStateSubsystem` 작성
    - 현재 StoryState 보관
-   - 조건 Case 기반 출력 인덱스 선택
+   - 상태 접근/초기화/상태 변경 적용 API 제공
 5. VN용 Shot 1차 작성
    - `UVNDialogueShot`
    - `UVNChoiceShot`
@@ -267,7 +264,7 @@ FVNStoryState StoryState
 
 - StoryFlow Scene에서 `UVNDialogueShot`이 대사를 표시하고 다음 Shot으로 진행된다.
 - `UVNChoiceShot`이 조건에 맞는 선택지를 표시하고 선택 결과를 StoryState에 반영한다.
-- `UVNConditionBranch`가 StoryState를 읽어 서로 다른 다음 Scene으로 보낸다.
+- 필요한 용도별 Branch 또는 평가 Shot이 StoryState를 읽어 서로 다른 다음 Scene으로 보낸다.
 - EventHub가 날짜/슬롯 기준으로 시작 SceneID를 고른다.
 - 저장 후 재실행해도 `FStoryFlowRef`와 StoryState가 함께 복원된다.
 - 캐릭터, 캐릭터 스프라이트, 배경, BGM, SFX, 이벤트, 기억 조각, 엔딩 참조가 `FItemID`로 검증된다.
@@ -362,7 +359,6 @@ TE_01_Wake
 | 상태 저장 테스트 | bool/int/name 상태가 저장 후 복원되는지 확인 |
 | 조건 평가 테스트 | `HayeonTrust >= 6`, `IsSohaResolved == true` 같은 조건 결과 확인 |
 | 선택지 테스트 | 조건 충족 선택지만 표시되고 선택 시 상태가 바뀌는지 확인 |
-| Branch 테스트 | 조건 Case와 Default fallback에 따라 다른 출력 인덱스가 선택되는지 확인 |
 | 저장 복원 테스트 | SceneID/ShotID와 StoryState가 같이 복원되는지 확인 |
 | D-Day 분기 테스트 | 진엔딩 조건 충족/미충족 케이스가 갈라지는지 확인 |
 | 루프 복귀 테스트 | 실패 결과 후 D-25 월요일 허브로 돌아가는지 확인 |
